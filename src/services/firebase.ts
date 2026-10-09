@@ -33,7 +33,7 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { logger } from './logger';
-import { StudyNote, UserProfile, ComplaintTicket } from '../types';
+import { StudyNote, UserProfile, ComplaintTicket, MistakeItem } from '../types';
 
 export enum OperationType {
   CREATE = 'create',
@@ -186,7 +186,13 @@ export async function signUpWithEmail(
 
     return cred.user;
   } catch (error: any) {
-    logger.error('Auth', `[AUTH] Registration failed [${error?.code || 'auth/unknown'}]:`, error?.message);
+    const code = error?.code || 'auth/unknown';
+    logger.error('Auth', `[AUTH] Registration failed [${code}]:`, error?.message);
+    if (code === 'auth/admin-restricted-operation' || error?.message?.includes('admin-restricted-operation')) {
+      const err = new Error('Sign-up is restricted by administrator settings in Firebase Console (User account creation is disabled). In Firebase Console -> Authentication -> Settings -> User actions, turn ON "Enable create (sign-up)".');
+      (err as any).code = 'auth/admin-restricted-operation';
+      throw err;
+    }
     throw error;
   }
 }
@@ -241,8 +247,10 @@ export async function signInAsGuestStudent(
   } catch (error: any) {
     const code = error?.code || 'auth/unknown';
     logger.error('Auth', `[AUTH] Guest sign-in failed [${code}]:`, error?.message);
-    if (code === 'auth/operation-not-allowed') {
-      throw new Error('Anonymous/Guest sign-in is not enabled in Firebase Console. Please sign in with Email or Google.');
+    if (code === 'auth/operation-not-allowed' || code === 'auth/admin-restricted-operation' || error?.message?.includes('admin-restricted-operation')) {
+      const err = new Error('Guest/Anonymous sign-in is not enabled in Firebase Console. Please enable "Anonymous" under Firebase Console -> Authentication -> Sign-in method, or sign in with Google/Email.');
+      (err as any).code = 'auth/admin-restricted-operation';
+      throw err;
     }
     throw error;
   }

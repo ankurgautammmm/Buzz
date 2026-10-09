@@ -16,7 +16,8 @@ import {
   Zap,
   Check,
   ArrowLeft,
-  RefreshCw
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import { 
   signInWithGoogle, 
@@ -96,7 +97,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         message = 'Network connection issue. Please check your internet connectivity and try again.';
         break;
       case 'auth/operation-not-allowed':
-        message = 'This authentication method is currently not enabled in Firebase Console. Please contact the administrator or use Google / Guest login.';
+        message = 'This authentication method is currently not enabled in Firebase Console. Please enable Email/Password or Anonymous in Firebase Console -> Authentication -> Sign-in method.';
+        break;
+      case 'auth/admin-restricted-operation':
+        message = 'Sign-up is restricted by administrator settings in Firebase Console (User account creation is disabled). In Firebase Console -> Authentication -> Settings -> User actions, enable "Allow users to sign up".';
         break;
       case 'auth/popup-blocked':
         message = 'Google sign-in popup was blocked by your browser. Please allow popups for this site, or sign in with Email / Guest mode.';
@@ -370,6 +374,51 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   [AUTH code: {errorCode}]
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Diagnostic Guide for Admin-Restricted-Operation / Operation-Not-Allowed Error */}
+        {(errorCode === 'auth/admin-restricted-operation' || errorCode === 'auth/operation-not-allowed') && (
+          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs text-amber-200/90 space-y-2.5 animate-in fade-in">
+            <div className="flex items-center gap-2 font-bold text-amber-300">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>How to Fix in Firebase Console (Project fast-hexagon-7mn89):</span>
+            </div>
+            <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-slate-300 leading-relaxed bg-black/40 p-2.5 rounded-xl border border-white/5">
+              <li>
+                Go to <span className="text-amber-300 font-semibold">Firebase Console</span> &rarr; open project <code className="text-amber-400 font-mono">fast-hexagon-7mn89</code>.
+              </li>
+              <li>
+                Click <span className="text-white font-medium">Build</span> &rarr; <span className="text-white font-medium">Authentication</span>.
+              </li>
+              <li>
+                Go to <span className="text-amber-300 font-medium">Settings</span> tab &rarr; <span className="text-white font-medium">User actions</span>.
+              </li>
+              <li>
+                Turn ON <span className="text-emerald-400 font-semibold">"Enable create (sign-up)"</span> and click Save.
+              </li>
+              <li>
+                In <span className="text-white font-medium">Sign-in method</span> tab, ensure <span className="text-amber-300 font-medium">Email/Password</span> and <span className="text-amber-300 font-medium">Anonymous</span> are enabled.
+              </li>
+            </ol>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <a
+                href="https://console.firebase.google.com/project/fast-hexagon-7mn89/authentication"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-[11px] transition-colors"
+              >
+                <span>Open Firebase Authentication Console</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[11px] font-semibold transition-colors"
+              >
+                Try Google Sign-In Instead
+              </button>
             </div>
           </div>
         )}

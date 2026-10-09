@@ -6,7 +6,10 @@ import {
   solveImageQuestion,
   checkHandwrittenAnswer,
   generateCustomChapterTest,
-  generateChapterMindMap
+  generateChapterMindMap,
+  generateCourseFromTextbook,
+  generateVideoScript,
+  regenerateNoteSection
 } from './geminiService';
 import { NCERT_SYLLABUS, validateNcertSyllabus } from '../src/data/ncertSyllabus';
 
@@ -175,4 +178,76 @@ apiRouter.post('/ai/generate-mindmap', async (req: Request, res: Response) => {
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Mindmap generation failed' });
   }
 });
+
+// AI Textbook-to-Complete-Course Generator Endpoint
+apiRouter.post('/ai/generate-course', async (req: Request, res: Response) => {
+  try {
+    const { textbookText, topic, chapter, classGrade, subject } = req.body;
+    if (!chapter && !topic && !textbookText) {
+      return res.status(400).json({ error: 'Either chapter, topic, or textbook text is required' });
+    }
+
+    const course = await generateCourseFromTextbook({
+      textbookText,
+      topic,
+      chapter,
+      classGrade: classGrade || 'Class 10',
+      subject: subject || 'Science',
+    });
+
+    return res.json({ success: true, course });
+  } catch (error) {
+    console.error('Error in /ai/generate-course:', error);
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Course generation failed' });
+  }
+});
+
+// AI Educational Video Script Generator Endpoint
+apiRouter.post('/ai/generate-video-script', async (req: Request, res: Response) => {
+  try {
+    const { topic, classGrade, subject, language, durationMinutes, template } = req.body;
+    if (!topic) {
+      return res.status(400).json({ error: 'Topic is required' });
+    }
+
+    const script = await generateVideoScript({
+      topic,
+      classGrade: classGrade || 'Class 10',
+      subject: subject || 'Science',
+      language: language || 'Hinglish',
+      durationMinutes: durationMinutes || 1,
+      template: template || 'shorts_vertical',
+    });
+
+    return res.json({ success: true, script });
+  } catch (error) {
+    console.error('Error in /ai/generate-video-script:', error);
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Video script generation failed' });
+  }
+});
+
+// Regenerate Individual Handwritten Note Section
+apiRouter.post('/handwriting/regenerate-section', async (req: Request, res: Response) => {
+  try {
+    const { heading, currentContent, chapter, classGrade, subject, feedback } = req.body;
+    if (!heading) {
+      return res.status(400).json({ error: 'Section heading is required' });
+    }
+
+    const regenerated = await regenerateNoteSection({
+      heading,
+      currentContent,
+      chapter: chapter || 'Physics Concept',
+      classGrade: classGrade || 'Class 10',
+      subject: subject || 'Science',
+      feedback,
+    });
+
+    return res.json({ success: true, section: regenerated });
+  } catch (error) {
+    console.error('Error in /handwriting/regenerate-section:', error);
+    return res.status(500).json({ error: error instanceof Error ? error.message : 'Section regeneration failed' });
+  }
+});
+
 

@@ -206,6 +206,62 @@
         }
       },
       "required": ["email", "role"]
+    },
+    "Mistake": {
+      "title": "Mistake Notebook Item",
+      "description": "Student mistake recorded during study or tests",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the student",
+          "maxLength": 128
+        },
+        "question": {
+          "type": "string",
+          "description": "Question or concept text",
+          "maxLength": 10000
+        },
+        "userAnswer": {
+          "type": "string",
+          "description": "Student's attempted answer",
+          "maxLength": 5000
+        },
+        "correctAnswer": {
+          "type": "string",
+          "description": "Correct answer key",
+          "maxLength": 5000
+        },
+        "explanation": {
+          "type": "string",
+          "description": "Detailed explanation",
+          "maxLength": 10000
+        },
+        "classGrade": {
+          "type": "string",
+          "description": "Class standard",
+          "maxLength": 50
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject name",
+          "maxLength": 100
+        },
+        "chapter": {
+          "type": "string",
+          "description": "Chapter title",
+          "maxLength": 150
+        },
+        "resolved": {
+          "type": "boolean",
+          "description": "Whether the student has revised and resolved this mistake"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["userId"]
     }
   },
   "firestore": {
@@ -220,6 +276,10 @@
     "/complaints/{complaintId}": {
       "schema": "Complaint",
       "description": "User submitted complaints, reviewable by administrators"
+    },
+    "/mistakes/{mistakeId}": {
+      "schema": "Mistake",
+      "description": "Student mistake notebook items for spaced repetition"
     },
     "/admins/{adminId}": {
       "schema": "Admin",

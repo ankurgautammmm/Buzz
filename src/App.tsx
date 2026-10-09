@@ -31,6 +31,14 @@ import { SyllabusSection } from './components/SyllabusSection';
 import { YouTubeChannelSection } from './components/YouTubeChannelSection';
 import { StudentNotesLibrary } from './components/StudentNotesLibrary';
 import { TestSection } from './components/TestSection';
+import { CourseGeneratorSection } from './components/CourseGeneratorSection';
+import { EducationalVideoStudio } from './components/EducationalVideoStudio';
+import { HomeworkScannerSection } from './components/HomeworkScannerSection';
+import { InteractiveLabsAndMindMaps } from './components/InteractiveLabsAndMindMaps';
+import { AdaptiveLearningDashboard } from './components/AdaptiveLearningDashboard';
+import { ExamRevisionPlanner } from './components/ExamRevisionPlanner';
+import { CommunityNotesHub } from './components/CommunityNotesHub';
+import { AccessibilityToolbar } from './components/AccessibilityToolbar';
 import { AdminDashboard } from './components/AdminDashboard';
 import { TermsAndConditionsPage } from './components/TermsAndConditionsPage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
@@ -297,6 +305,40 @@ export default function App() {
       alert('Handwritten note saved to your Student Library!');
     } catch (err) {
       logger.error('App', 'Failed to save note:', err);
+    }
+  };
+
+  // 5b. Regenerate an individual section of the active note without re-running everything
+  const handleRegenerateSection = async (secIdx: number) => {
+    if (!currentActiveNote) return;
+    const targetSec = currentActiveNote.sections[secIdx];
+    if (!targetSec) return;
+
+    try {
+      const response = await fetch('/api/handwriting/regenerate-section', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chapter: currentActiveNote.chapter,
+          subject: currentActiveNote.subject,
+          classGrade: currentActiveNote.classGrade,
+          sectionHeading: targetSec.heading,
+          sectionContext: targetSec.content,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to regenerate section');
+      const data = await response.json();
+      if (data.section) {
+        const updated = [...currentActiveNote.sections];
+        updated[secIdx] = data.section;
+        setCurrentActiveNote({
+          ...currentActiveNote,
+          sections: updated,
+        });
+      }
+    } catch (err) {
+      logger.error('App', 'Failed to regenerate individual note section:', err);
     }
   };
 
@@ -602,6 +644,13 @@ export default function App() {
               }
               setCurrentTab('tests');
             }}
+            onGoToDashboard={() => setCurrentTab('dashboard')}
+            onGoToCourses={() => setCurrentTab('courses')}
+            onGoToVideos={() => setCurrentTab('videos')}
+            onGoToScanner={() => setCurrentTab('scanner')}
+            onGoToLabs={() => setCurrentTab('labs')}
+            onGoToPlanner={() => setCurrentTab('planner')}
+            onGoToCommunity={() => setCurrentTab('community')}
             onSignIn={handleSignIn}
             onSignUp={handleSignUp}
             user={userProfile}
@@ -674,11 +723,7 @@ export default function App() {
                     handleExecuteCommand(`/handwriting ${currentActiveNote.chapter} --class ${currentActiveNote.classGrade.replace('Class ', '')} --detailed`);
                   }
                 }}
-                onRegenerateSection={(secIdx) => {
-                  if (currentActiveNote) {
-                    handleExecuteCommand(`/handwriting ${currentActiveNote.chapter} --class ${currentActiveNote.classGrade.replace('Class ', '')} --detailed`);
-                  }
-                }}
+                onRegenerateSection={handleRegenerateSection}
               />
             ) : (
               /* Starter Guide & Features Hero */
@@ -849,6 +894,117 @@ export default function App() {
             onBack={() => setCurrentTab('landing')}
           />
         )}
+
+        {/* Tab: Adaptive Learning Dashboard */}
+        {currentTab === 'dashboard' && (
+          <AdaptiveLearningDashboard
+            user={userProfile}
+            activeClass={activeClass}
+            onGoToStudio={(cmd) => {
+              if (cmd) {
+                handleExecuteCommand(cmd);
+              }
+              setCurrentTab('studio');
+            }}
+            onGoToTests={() => setCurrentTab('tests')}
+            onGoToCourses={() => setCurrentTab('courses')}
+            onRequireAuth={() => {
+              setAuthWallMessage("Please log in or sign up to view your personalized study dashboard.");
+              setShowAuthWall(true);
+            }}
+          />
+        )}
+
+        {/* Tab: Textbook to Complete Course Generator */}
+        {currentTab === 'courses' && (
+          <CourseGeneratorSection
+            user={userProfile}
+            activeClass={activeClass}
+            onGoToStudio={(cmd) => {
+              handleExecuteCommand(cmd);
+              setCurrentTab('studio');
+            }}
+            onRequireAuth={() => {
+              setAuthWallMessage("Please log in or sign up to generate textbook courses.");
+              setShowAuthWall(true);
+            }}
+          />
+        )}
+
+        {/* Tab: AI Educational Video Studio */}
+        {currentTab === 'videos' && (
+          <EducationalVideoStudio
+            user={userProfile}
+            activeClass={activeClass}
+            onRequireAuth={() => {
+              setAuthWallMessage("Please log in or sign up to generate educational videos.");
+              setShowAuthWall(true);
+            }}
+          />
+        )}
+
+        {/* Tab: AI Homework Scanner */}
+        {currentTab === 'scanner' && (
+          <HomeworkScannerSection
+            user={userProfile}
+            activeClass={activeClass}
+            onRequireAuth={() => {
+              setAuthWallMessage("Please log in or sign up to scan and evaluate homework solutions.");
+              setShowAuthWall(true);
+            }}
+          />
+        )}
+
+        {/* Tab: Mind Maps & Virtual Labs */}
+        {currentTab === 'labs' && (
+          <InteractiveLabsAndMindMaps
+            activeClass={activeClass}
+          />
+        )}
+
+        {/* Tab: Exam Revision Planner (Phase 4) */}
+        {currentTab === 'planner' && (
+          <ExamRevisionPlanner
+            user={userProfile}
+            activeClass={activeClass}
+            onGoToStudio={(cmd) => {
+              setQueuedCommand(cmd);
+              setCurrentTab('studio');
+              if (firebaseUser) {
+                handleExecuteCommand(cmd);
+              } else {
+                setAuthWallMessage("Please log in or sign up to generate study notes for this revision slot.");
+                setShowAuthWall(true);
+              }
+            }}
+            onRequireAuth={() => {
+              setAuthWallMessage("Please log in or sign up to personalize your exam revision schedule.");
+              setShowAuthWall(true);
+            }}
+          />
+        )}
+
+        {/* Tab: Community Notes Hub & Study Circles (Phase 4) */}
+        {currentTab === 'community' && (
+          <CommunityNotesHub
+            user={userProfile}
+            activeClass={activeClass}
+            onGoToStudio={(cmd) => {
+              setQueuedCommand(cmd);
+              setCurrentTab('studio');
+              if (firebaseUser) {
+                handleExecuteCommand(cmd);
+              } else {
+                setAuthWallMessage("Please log in or sign up to view and customize community handwritten notes.");
+                setShowAuthWall(true);
+              }
+            }}
+            onRequireAuth={() => {
+              setAuthWallMessage("Please log in or sign up to upvote notes and join peer study circles.");
+              setShowAuthWall(true);
+            }}
+          />
+        )}
       </main>
 
       {/* Astra Footer */}
@@ -1000,6 +1156,9 @@ export default function App() {
         description={authWallMessage}
         onOpenLegal={handleOpenLegal}
       />
+
+      {/* Global Accessibility & Neuroinclusive Floating Toolbar */}
+      <AccessibilityToolbar />
     </InteractiveSpaceBackground>
   );
 }

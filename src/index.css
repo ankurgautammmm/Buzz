@@ -39,6 +39,40 @@
   border-color: rgba(251, 191, 36, 0.35);
 }
 
+/* Accessibility & Neuroinclusive Styles */
+html.text-size-large {
+  font-size: 112%;
+}
+
+html.text-size-xl {
+  font-size: 125%;
+}
+
+html.dyslexia-font,
+html.dyslexia-font * {
+  font-family: 'Comic Sans MS', 'Trebuchet MS', 'Verdana', sans-serif !important;
+  letter-spacing: 0.05em !important;
+  word-spacing: 0.1em !important;
+  line-height: 1.7 !important;
+}
+
+html.reduce-motion,
+html.reduce-motion * {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+html.high-contrast {
+  filter: contrast(1.25) brightness(1.05);
+}
+
+html.focus-study-mode canvas,
+html.focus-study-mode .astra-starfield {
+  background-image: none !important;
+  background-color: #030712 !important;
+}
+
 /* Print Stylesheet for Handwritten Notes & High-Res PDF Export */
 @media print {
   @page {

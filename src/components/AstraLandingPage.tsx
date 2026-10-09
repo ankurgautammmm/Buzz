@@ -12,7 +12,14 @@ import {
   ChevronRight,
   GraduationCap,
   Layers,
-  HelpCircle
+  HelpCircle,
+  Video,
+  Camera,
+  GitBranch,
+  LayoutDashboard,
+  Zap,
+  Calendar,
+  Users
 } from 'lucide-react';
 import { UserProfile } from '../types';
 
@@ -23,6 +30,13 @@ interface AstraLandingPageProps {
   onGoToYouTube: () => void;
   onGoToLibrary: () => void;
   onGoToTests: () => void;
+  onGoToDashboard?: () => void;
+  onGoToCourses?: () => void;
+  onGoToVideos?: () => void;
+  onGoToScanner?: () => void;
+  onGoToLabs?: () => void;
+  onGoToPlanner?: () => void;
+  onGoToCommunity?: () => void;
   onSignIn: () => void;
   onSignUp: () => void;
   user: UserProfile | null;
@@ -35,6 +49,13 @@ export const AstraLandingPage: React.FC<AstraLandingPageProps> = ({
   onGoToYouTube,
   onGoToLibrary,
   onGoToTests,
+  onGoToDashboard,
+  onGoToCourses,
+  onGoToVideos,
+  onGoToScanner,
+  onGoToLabs,
+  onGoToPlanner,
+  onGoToCommunity,
   onSignIn,
   onSignUp,
   user,
@@ -133,7 +154,201 @@ export const AstraLandingPage: React.FC<AstraLandingPageProps> = ({
         </div>
       </section>
 
-      {/* 2. THE TOPPER REGISTER LAYOUT: Authentic Handwritten Notes Architecture */}
+      {/* 2. THE 6 PILLARS OF BUZZING BRAIN: Comprehensive AI Education Suite */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+        <div className="max-w-2xl space-y-3 text-left">
+          <div className="inline-flex items-center gap-2 text-xs font-bold tracking-wider uppercase text-amber-400">
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>All-In-One Open Education Platform</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Everything a student needs to master their syllabus.
+          </h2>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            From textbook decomposition to handwritten study registers, video production, homework checking, and virtual physics experiments.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Card 1: Textbook to Complete Course */}
+          <div 
+            onClick={() => onGoToCourses ? onGoToCourses() : onGoToStudio()}
+            className="p-6 rounded-3xl astra-card border border-white/10 hover:border-amber-400/40 transition-all cursor-pointer group space-y-4 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-400/20 text-amber-400 flex items-center justify-center font-bold">
+                <BookOpen className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
+                Textbook to Complete Course
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Upload a textbook PDF or paste chapter text to generate an entire curriculum: chapter summary, subtopic breakdowns, formulas, definitions, MCQs, and flashcards.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 pt-2 border-t border-white/5">
+              <span>Launch Course Engine</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Card 2: Handwritten Notes Studio */}
+          <div 
+            onClick={() => onGoToStudio()}
+            className="p-6 rounded-3xl astra-card border border-white/10 hover:border-amber-400/40 transition-all cursor-pointer group space-y-4 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-400/20 text-amber-400 flex items-center justify-center font-bold">
+                <PenTool className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
+                Handwritten Notes Studio
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Authentic ruled notebook pages with realistic handwriting fonts, red margins, formula derivations, post-it memory hacks, and printable vector PDF export.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 pt-2 border-t border-white/5">
+              <span>Synthesize Notes</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Card 3: AI Educational Video Studio */}
+          <div 
+            onClick={() => onGoToVideos ? onGoToVideos() : onGoToYouTube()}
+            className="p-6 rounded-3xl astra-card border border-white/10 hover:border-rose-500/40 transition-all cursor-pointer group space-y-4 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
+                <Video className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white group-hover:text-rose-300 transition-colors">
+                AI Video Studio (Shorts)
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Convert chapters into 60s educational Shorts with Buzzing Brain channel branding, subtle piano intro/outro chords, timed scene narration, and audience comment challenges.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-rose-400 pt-2 border-t border-white/5">
+              <span>Open Video Studio</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Card 4: AI Homework Scanner */}
+          <div 
+            onClick={() => onGoToScanner ? onGoToScanner() : onGoToStudio()}
+            className="p-6 rounded-3xl astra-card border border-white/10 hover:border-emerald-400/40 transition-all cursor-pointer group space-y-4 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                <Camera className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
+                AI Homework Scanner
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Photograph your handwritten homework solution. Get step-by-step examiner evaluations, mark breakdowns, mistake alerts, and perfect full-marks model answers.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 pt-2 border-t border-white/5">
+              <span>Scan Homework</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Card 5: Practice Tests & Adaptive Engine */}
+          <div 
+            onClick={() => onGoToTests()}
+            className="p-6 rounded-3xl astra-card border border-white/10 hover:border-purple-400/40 transition-all cursor-pointer group space-y-4 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
+                <Award className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white group-hover:text-purple-300 transition-colors">
+                Practice Tests &amp; Adaptive Engine
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Timed chapter assessments, randomized MCQs, and forgetting curve spaced repetition revision reminders to ensure retention for final board evaluations.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-purple-400 pt-2 border-t border-white/5">
+              <span>Start Assessment</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Card 6: Interactive Labs & Mind Maps */}
+          <div 
+            onClick={() => onGoToLabs ? onGoToLabs() : onGoToStudio()}
+            className="p-6 rounded-3xl astra-card border border-white/10 hover:border-cyan-400/40 transition-all cursor-pointer group space-y-4 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                <GitBranch className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">
+                Mind Maps &amp; Virtual Labs
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Expandable conceptual mind maps alongside interactive virtual science experiments: Ohm's Law circuit simulation, Convex Lens ray optics, and Simple Pendulums.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-400 pt-2 border-t border-white/5">
+              <span>Explore Labs</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Card 7: AI Exam Revision Planner & Countdown */}
+          <div 
+            onClick={() => onGoToPlanner ? onGoToPlanner() : onGoToTests()}
+            className="p-6 rounded-3xl astra-card border border-white/10 hover:border-amber-400/40 transition-all cursor-pointer group space-y-4 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
+                Exam Revision Planner
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                National exam countdown clock, spaced repetition matrix (1-3-7-14-30 days), daily 3-slot study routines, and full NCERT syllabus completion trackers.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 pt-2 border-t border-white/5">
+              <span>Open Study Planner</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Card 8: Topper Community Hub & Peer Study Groups */}
+          <div 
+            onClick={() => onGoToCommunity ? onGoToCommunity() : onGoToStudio()}
+            className="p-6 rounded-3xl astra-card border border-white/10 hover:border-emerald-400/40 transition-all cursor-pointer group space-y-4 flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                <Users className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
+                Topper Community Hub
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Browse authentic notes shared by board rankers across India. Upvote, clone to your library, join study circles, and run synchronized peer mock challenges.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 pt-2 border-t border-white/5">
+              <span>Join Community</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. THE TOPPER REGISTER LAYOUT */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="rounded-2xl bg-slate-900/60 border border-white/[0.08] p-8 md:p-12 space-y-10">
           <div className="max-w-2xl space-y-4">

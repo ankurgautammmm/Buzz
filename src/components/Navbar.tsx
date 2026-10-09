@@ -12,11 +12,35 @@ import {
   Search, 
   ExternalLink, 
   ChevronDown,
-  Award
+  Award,
+  Video,
+  Camera,
+  GitBranch,
+  LayoutDashboard,
+  Layers,
+  Calendar,
+  Users
 } from 'lucide-react';
 import { UserProfile, AuthStateStatus } from '../types';
 
-export type NavTab = 'landing' | 'syllabus' | 'studio' | 'books' | 'tests' | 'youtube' | 'library' | 'admin' | 'terms' | 'privacy';
+export type NavTab = 
+  | 'landing' 
+  | 'dashboard'
+  | 'courses'
+  | 'studio' 
+  | 'videos'
+  | 'scanner'
+  | 'tests' 
+  | 'planner'
+  | 'community'
+  | 'labs'
+  | 'books' 
+  | 'syllabus' 
+  | 'youtube' 
+  | 'library' 
+  | 'admin' 
+  | 'terms' 
+  | 'privacy';
 
 interface NavbarProps {
   currentTab: NavTab;
@@ -103,70 +127,152 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Desktop Navigation Links (Astra / OpenAI Layout) */}
-          <nav className="hidden lg:flex items-center gap-1 text-xs font-semibold text-slate-300">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden xl:flex items-center gap-1 text-xs font-semibold text-slate-300">
             <button
               onClick={() => onTabChange('landing')}
-              className={`px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer ${
                 currentTab === 'landing'
                   ? 'text-white bg-white/15'
                   : 'hover:text-white hover:bg-white/5'
               }`}
             >
-              Free Education
+              Home
             </button>
 
             <button
-              onClick={() => onTabChange('syllabus')}
-              className={`px-3 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1.5 ${
-                currentTab === 'syllabus'
+              onClick={() => onTabChange('dashboard')}
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                currentTab === 'dashboard'
                   ? 'text-white bg-white/15'
                   : 'hover:text-white hover:bg-white/5'
               }`}
             >
-              <FileText className="w-3.5 h-3.5 text-amber-400" />
-              <span>Syllabus (2026–27)</span>
+              <LayoutDashboard className="w-3.5 h-3.5 text-amber-400" />
+              <span>Dashboard</span>
             </button>
 
             <button
-              onClick={() => onTabChange('books')}
-              className={`px-3 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1.5 ${
-                currentTab === 'books'
+              onClick={() => onTabChange('courses')}
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                currentTab === 'courses'
                   ? 'text-white bg-white/15'
                   : 'hover:text-white hover:bg-white/5'
               }`}
             >
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-              <span>NCERT Books</span>
-            </button>
-
-            <button
-              onClick={() => onTabChange('tests')}
-              className={`px-3 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1.5 ${
-                currentTab === 'tests'
-                  ? 'text-white bg-white/15'
-                  : 'hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Award className="w-3.5 h-3.5 text-amber-400" />
-              <span>Practice Tests</span>
+              <span>Courses</span>
             </button>
 
             <button
               onClick={() => onTabChange('studio')}
-              className={`px-3 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
                 currentTab === 'studio'
                   ? 'text-white bg-white/15'
                   : 'hover:text-white hover:bg-white/5'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Handwritten Studio</span>
+              <span>Notes Studio</span>
+            </button>
+
+            <button
+              onClick={() => onTabChange('videos')}
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                currentTab === 'videos'
+                  ? 'text-white bg-white/15'
+                  : 'hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Video className="w-3.5 h-3.5 text-rose-400" />
+              <span>Video Studio</span>
+            </button>
+
+            <button
+              onClick={() => onTabChange('scanner')}
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                currentTab === 'scanner'
+                  ? 'text-white bg-white/15'
+                  : 'hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Camera className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Scanner</span>
+            </button>
+
+            <button
+              onClick={() => onTabChange('tests')}
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                currentTab === 'tests'
+                  ? 'text-white bg-white/15'
+                  : 'hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Award className="w-3.5 h-3.5 text-amber-400" />
+              <span>Tests</span>
+            </button>
+
+            <button
+              onClick={() => onTabChange('planner')}
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                currentTab === 'planner'
+                  ? 'text-white bg-white/15'
+                  : 'hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+              <span>Revision Planner</span>
+            </button>
+
+            <button
+              onClick={() => onTabChange('community')}
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                currentTab === 'community'
+                  ? 'text-white bg-white/15'
+                  : 'hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Community</span>
+            </button>
+
+            <button
+              onClick={() => onTabChange('labs')}
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                currentTab === 'labs'
+                  ? 'text-white bg-white/15'
+                  : 'hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <GitBranch className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Labs &amp; Mind Maps</span>
+            </button>
+
+            <button
+              onClick={() => onTabChange('books')}
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                currentTab === 'books'
+                  ? 'text-white bg-white/15'
+                  : 'hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <span>NCERT</span>
+            </button>
+
+            <button
+              onClick={() => onTabChange('syllabus')}
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                currentTab === 'syllabus'
+                  ? 'text-white bg-white/15'
+                  : 'hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <span>Syllabus</span>
             </button>
 
             <button
               onClick={() => onTabChange('youtube')}
-              className={`px-3 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
                 currentTab === 'youtube'
                   ? 'text-white bg-white/15'
                   : 'hover:text-white hover:bg-white/5'
@@ -178,19 +284,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <button
               onClick={() => onTabChange('library')}
-              className={`px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer ${
                 currentTab === 'library'
                   ? 'text-white bg-white/15'
                   : 'hover:text-white hover:bg-white/5'
               }`}
             >
-              Notes Library
+              Library
             </button>
 
             {isAdmin && (
               <button
                 onClick={() => onTabChange('admin')}
-                className={`px-3 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
                   currentTab === 'admin'
                     ? 'text-white bg-white/15'
                     : 'hover:text-white hover:bg-white/5'
@@ -198,16 +304,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-rose-400" />
                 <span>Admin</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
               </button>
             )}
-
-            <button
-              onClick={onOpenComplaint}
-              className="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors cursor-pointer text-slate-400"
-            >
-              Grievances
-            </button>
           </nav>
 
           {/* Right Action Buttons (ChatGPT 6 Astra Style: "Log in" and "Try Buzzing Brain") */}
@@ -292,54 +390,96 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Mobile Navigation Sub-Bar */}
-        <div className="flex lg:hidden items-center justify-around py-2 border-t border-white/10 text-xs font-semibold overflow-x-auto gap-2 text-slate-300">
+        {/* Mobile Navigation Sub-Bar (Smooth horizontal scroll) */}
+        <div className="flex xl:hidden items-center py-2.5 border-t border-white/10 text-xs font-semibold overflow-x-auto gap-2 text-slate-300 scrollbar-none px-1">
           <button
             onClick={() => onTabChange('landing')}
-            className={`px-2 py-1 rounded-lg ${currentTab === 'landing' ? 'text-white font-bold bg-white/10' : ''}`}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'landing' ? 'text-white font-bold bg-white/15' : 'hover:bg-white/5'}`}
           >
             Home
           </button>
           <button
-            onClick={() => onTabChange('syllabus')}
-            className={`px-2 py-1 rounded-lg ${currentTab === 'syllabus' ? 'text-amber-400 font-bold bg-white/10' : ''}`}
+            onClick={() => onTabChange('dashboard')}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'dashboard' ? 'text-amber-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
           >
-            Syllabus
+            Dashboard
           </button>
           <button
-            onClick={() => onTabChange('books')}
-            className={`px-2 py-1 rounded-lg ${currentTab === 'books' ? 'text-amber-400 font-bold bg-white/10' : ''}`}
+            onClick={() => onTabChange('courses')}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'courses' ? 'text-amber-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
           >
-            NCERT
+            Courses
+          </button>
+          <button
+            onClick={() => onTabChange('studio')}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'studio' ? 'text-amber-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
+          >
+            Notes
+          </button>
+          <button
+            onClick={() => onTabChange('videos')}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'videos' ? 'text-rose-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
+          >
+            Videos
+          </button>
+          <button
+            onClick={() => onTabChange('scanner')}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'scanner' ? 'text-emerald-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
+          >
+            Scanner
           </button>
           <button
             onClick={() => onTabChange('tests')}
-            className={`px-2 py-1 rounded-lg ${currentTab === 'tests' ? 'text-amber-400 font-bold bg-white/10' : ''}`}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'tests' ? 'text-amber-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
           >
             Tests
           </button>
           <button
-            onClick={() => onTabChange('studio')}
-            className={`px-2 py-1 rounded-lg ${currentTab === 'studio' ? 'text-amber-400 font-bold bg-white/10' : ''}`}
+            onClick={() => onTabChange('planner')}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'planner' ? 'text-amber-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
           >
-            Studio
+            Planner
+          </button>
+          <button
+            onClick={() => onTabChange('community')}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'community' ? 'text-emerald-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
+          >
+            Community
+          </button>
+          <button
+            onClick={() => onTabChange('labs')}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'labs' ? 'text-cyan-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
+          >
+            Labs &amp; Mind Maps
+          </button>
+          <button
+            onClick={() => onTabChange('books')}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'books' ? 'text-white font-bold bg-white/15' : 'hover:bg-white/5'}`}
+          >
+            NCERT
+          </button>
+          <button
+            onClick={() => onTabChange('syllabus')}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'syllabus' ? 'text-white font-bold bg-white/15' : 'hover:bg-white/5'}`}
+          >
+            Syllabus
           </button>
           <button
             onClick={() => onTabChange('youtube')}
-            className={`px-2 py-1 rounded-lg ${currentTab === 'youtube' ? 'text-rose-400 font-bold bg-white/10' : ''}`}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'youtube' ? 'text-rose-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
           >
             YouTube
           </button>
           <button
             onClick={() => onTabChange('library')}
-            className={`px-2 py-1 rounded-lg ${currentTab === 'library' ? 'text-white font-bold bg-white/10' : ''}`}
+            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'library' ? 'text-white font-bold bg-white/15' : 'hover:bg-white/5'}`}
           >
             Library
           </button>
           {isAdmin && (
             <button
               onClick={() => onTabChange('admin')}
-              className={`px-2 py-1 rounded-lg ${currentTab === 'admin' ? 'text-rose-400 font-bold bg-white/10' : ''}`}
+              className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'admin' ? 'text-rose-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
             >
               Admin
             </button>
