@@ -48,6 +48,7 @@ import { TermsPrivacyModal } from './components/TermsPrivacyModal';
 import { AiTutorChatDrawer } from './components/AiTutorChatDrawer';
 import { AuthWallModal } from './components/AuthWallModal';
 import { InteractiveSpaceBackground } from './components/InteractiveSpaceBackground';
+import { COMPREHENSIVE_CHAPTER_NOTES, getCuratedChapterNote } from './data/curatedChapterNotes';
 import { 
   StudyNote, 
   UserProfile, 
@@ -84,7 +85,9 @@ export default function App() {
 
   // Study Notes State
   const [notesList, setNotesList] = useState<StudyNote[]>([]);
-  const [currentActiveNote, setCurrentActiveNote] = useState<NoteContentPayload | null>(null);
+  const [currentActiveNote, setCurrentActiveNote] = useState<NoteContentPayload | null>(
+    COMPREHENSIVE_CHAPTER_NOTES["Class 10:Science:Photosynthesis"] || null
+  );
   const [currentActiveStyle, setCurrentActiveStyle] = useState<HandwritingStyleConfig | null>(null);
   const [activeNoteSavedId, setActiveNoteSavedId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -202,19 +205,70 @@ export default function App() {
     };
   }, [firebaseUser]);
 
-  // 4. Command Execution Engine (/handwriting) - Enforces Login for Generating Notes
+  // Quick Sample Chapter Selector
+  const handleSelectSampleChapter = (chapterKey: string) => {
+    const found = COMPREHENSIVE_CHAPTER_NOTES[chapterKey];
+    if (found) {
+      setCurrentActiveNote(found);
+      setActiveClass(found.classGrade);
+      setCurrentTab('studio');
+      setActiveNoteSavedId(null);
+      setQueuedCommand(undefined);
+    }
+  };
+
+  // 4. Command Execution Engine (/handwriting) - Resolves Curated Notes or Calls AI Generator
   const handleExecuteCommand = async (
     commandString: string, 
     options?: Partial<HandwritingStyleConfig> & { thinkingMode?: 'standard' | 'high' }
   ) => {
-    // Strictly require login before notes generation
+    // 4a. Check if command targets one of our comprehensive curated chapter notes
+    const lowerCmd = commandString.toLowerCase();
+    if (lowerCmd.includes('photosynthesis')) {
+      handleSelectSampleChapter("Class 10:Science:Photosynthesis");
+      return;
+    }
+    if (lowerCmd.includes('laws of motion')) {
+      handleSelectSampleChapter("Class 11:Physics:Laws of Motion");
+      return;
+    }
+    if (lowerCmd.includes('quadratic')) {
+      handleSelectSampleChapter("Class 10:Mathematics:Quadratic Equations");
+      return;
+    }
+    if (lowerCmd.includes('chemical reaction')) {
+      handleSelectSampleChapter("Class 10:Science:Chemical Reactions and Equations");
+      return;
+    }
+    if (lowerCmd.includes('fundamental unit') || (lowerCmd.includes('cell') && lowerCmd.includes('9'))) {
+      handleSelectSampleChapter("Class 9:Science:The Fundamental Unit of Life: Cell");
+      return;
+    }
+    if (lowerCmd.includes('electric charge')) {
+      handleSelectSampleChapter("Class 12:Physics:Electric Charges and Fields");
+      return;
+    }
+    if (lowerCmd.includes('chemical bonding')) {
+      handleSelectSampleChapter("Class 11:Chemistry:Chemical Bonding and Molecular Structure");
+      return;
+    }
+
+    // 4b. For other bespoke topics, unauthenticated users get curated syllabus notes directly
     if (!firebaseUser) {
-      setAuthWallMessage("To synthesize authentic handwritten NCERT study notes with formulas, diagrams, and PDF exports, please log in or sign up first. It's completely free!");
+      const cleaned = commandString.replace('/handwriting', '').trim();
+      const match = getCuratedChapterNote(activeClass, 'Science', cleaned);
+      if (match) {
+        setCurrentActiveNote(match);
+        setCurrentTab('studio');
+        return;
+      }
+      setAuthWallMessage("To synthesize custom AI handwritten NCERT study notes with formulas, diagrams, and PDF exports, please log in or sign up first. It's completely free!");
       setShowAuthWall(true);
       return;
     }
 
     setIsGenerating(true);
+    setCurrentTab('studio');
     setGenerationError(null);
     logger.info('Pipeline', `Executing note generation: ${commandString}`);
 
@@ -598,12 +652,6 @@ export default function App() {
         {currentTab === 'landing' && (
           <AstraLandingPage
             onGoToStudio={(sampleCmd) => {
-              if (!firebaseUser) {
-                if (sampleCmd) setQueuedCommand(sampleCmd);
-                setAuthWallMessage("Login or Sign Up is compulsory to create or access handwritten study notes. Please sign in or create your free student account!");
-                setShowAuthWall(true);
-                return;
-              }
               if (sampleCmd) {
                 setQueuedCommand(sampleCmd);
                 handleExecuteCommand(sampleCmd);
@@ -660,17 +708,20 @@ export default function App() {
         {/* Tab: Handwritten Studio */}
         {currentTab === 'studio' && (
           <div className="space-y-6">
-            {/* If user is not logged in, show student login banner */}
+            {/* If user is not logged in, show student encouragement banner */}
             {!firebaseUser && (
-              <div className="astra-card rounded-2xl p-4 sm:p-5 border border-amber-400/40 bg-amber-400/10 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+              <div className="astra-card rounded-2xl p-4 sm:p-5 border border-amber-400/30 bg-amber-400/5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 shadow-md">
-                    <Lock className="w-5 h-5" />
+                    <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-sm text-white">Student Sign-In Required</h4>
-                    <p className="text-xs text-amber-200/90 mt-0.5">
-                      To access and synthesize authentic handwritten notes with diagrams and formulas, sign in with your Google account. It's 100% free!
+                    <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                      <span>Free NCERT Handwritten Notes Studio</span>
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono">100% OPEN</span>
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Explore authentic 4-page topper register notes with ruled pages, formulas, diagrams &amp; PYQs. Sign in free anytime to save to your personal study locker!
                     </p>
                   </div>
                 </div>
@@ -693,10 +744,11 @@ export default function App() {
               initialCommand={queuedCommand}
             />
 
-            {/* Generated Note Renderer or Empty Prompt */}
-            {currentActiveNote ? (
+            {/* Generated Note Renderer or Skeleton Loader while Synthesizing */}
+            {(currentActiveNote || isGenerating) ? (
               <HandwrittenNoteRenderer
                 note={currentActiveNote}
+                isLoading={isGenerating}
                 styleConfig={currentActiveStyle || {
                   penType: 'gel-pen',
                   inkColor: 'royal-blue',
@@ -724,6 +776,7 @@ export default function App() {
                   }
                 }}
                 onRegenerateSection={handleRegenerateSection}
+                onSelectSampleChapter={handleSelectSampleChapter}
               />
             ) : (
               /* Starter Guide & Features Hero */

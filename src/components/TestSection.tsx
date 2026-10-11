@@ -61,7 +61,7 @@ export const TestSection: React.FC<TestSectionProps> = ({
   const [aiSubject, setAiSubject] = useState('Science');
   const [aiPattern, setAiPattern] = useState<'cbse' | 'neet' | 'jee'>('cbse');
   const [aiDifficulty, setAiDifficulty] = useState<'medium' | 'hard' | 'board_level'>('board_level');
-  const [aiCount, setAiCount] = useState<number>(5);
+  const [aiCount, setAiCount] = useState<number>(10);
   const [isGeneratingAiTest, setIsGeneratingAiTest] = useState(false);
   const [aiTestError, setAiTestError] = useState<string | null>(null);
 
@@ -843,7 +843,7 @@ export const TestSection: React.FC<TestSectionProps> = ({
 
         {/* Subject Filter Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold">
-          {['All', 'Physics', 'Chemistry', 'Biology', 'Science'].map((subj) => (
+          {['All', 'Physics', 'Chemistry', 'Biology', 'Mathematics', 'Science'].map((subj) => (
             <button
               key={subj}
               onClick={() => setSelectedSubjectFilter(subj)}
@@ -1004,9 +1004,10 @@ export const TestSection: React.FC<TestSectionProps> = ({
                     onChange={(e) => setAiCount(Number(e.target.value))}
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white focus:outline-none focus:border-amber-400"
                   >
-                    <option value={5}>5 Questions (Express)</option>
-                    <option value={10}>10 Questions (Standard)</option>
+                    <option value={5}>5 Questions (Express Quick Test)</option>
+                    <option value={10}>10 Questions (Standard CBSE / NEET)</option>
                     <option value={15}>15 Questions (Full Mock)</option>
+                    <option value={20}>20 Questions (Extended Exam)</option>
                   </select>
                 </div>
               </div>

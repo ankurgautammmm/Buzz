@@ -416,11 +416,7 @@ export const AstraLandingPage: React.FC<AstraLandingPageProps> = ({
           <div className="pt-4 flex justify-start">
             <button
               onClick={() => {
-                if (!user) {
-                  onSignUp();
-                } else {
-                  onGoToStudio('/handwriting class:11 subject:Physics chapter:Laws of Motion topic:Friction & Circular Motion style:gel-pen paper:ruled ink:royal-blue thinking:high');
-                }
+                onGoToStudio('/handwriting class:11 subject:Physics chapter:Laws of Motion topic:Friction & Circular Motion style:gel-pen paper:ruled ink:royal-blue thinking:high');
               }}
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm border border-white/10 hover:border-amber-400/30 transition-all cursor-pointer"
             >

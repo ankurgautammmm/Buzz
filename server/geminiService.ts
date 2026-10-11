@@ -47,7 +47,7 @@ function isQuotaError(err: unknown): boolean {
  * 4. Secondary fallback model: 'gemini-3.8-flash'
  * 5. Sanitized logging (never dumps raw ApiError JSON to stdout/stderr)
  */
-async function callGeminiSafely(options: {
+export async function callGeminiSafely(options: {
   contents: any;
   systemInstruction?: string;
   responseMimeType?: string;
