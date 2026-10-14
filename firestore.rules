@@ -106,6 +106,24 @@ service cloud.firestore {
         (!('timestamp' in data) || (data.timestamp is string && data.timestamp.size() <= 50));
     }
 
+    function isValidTestAttempt(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+        data.testId is string && data.testId.size() <= 128 &&
+        data.testTitle is string && data.testTitle.size() <= 200 &&
+        (!('classGrade' in data) || (data.classGrade is string && data.classGrade.size() <= 50)) &&
+        (!('subject' in data) || (data.subject is string && data.subject.size() <= 100)) &&
+        (!('chapter' in data) || (data.chapter is string && data.chapter.size() <= 150)) &&
+        data.score is number &&
+        data.maxScore is number &&
+        (!('percentage' in data) || data.percentage is number) &&
+        (!('correctCount' in data) || data.correctCount is number) &&
+        (!('wrongCount' in data) || data.wrongCount is number) &&
+        (!('unattemptedCount' in data) || data.unattemptedCount is number) &&
+        (!('examPattern' in data) || (data.examPattern is string && data.examPattern.size() <= 50)) &&
+        (!('percentile' in data) || (data.percentile is string && data.percentile.size() <= 50)) &&
+        (!('timestamp' in data) || (data.timestamp is string && data.timestamp.size() <= 50));
+    }
+
     // 1. User Profiles
     match /users/{userId} {
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
@@ -127,18 +145,10 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 2. Study Notes
+    // 2. Study Notes (Open Educational Resources)
     match /notes/{noteId} {
-      // Anyone can view public notes; signed in users can view their own private notes or admin
-      allow get: if existing().isPublic == true || (
-        isSignedIn() && (
-          existing().userId == request.auth.uid ||
-          isAdmin()
-        )
-      );
-      
-      // Allow students to list study notes
-      allow list: if true;
+      // Anyone can view notes in the open educational repository
+      allow get, list: if true;
 
       allow create: if isSignedIn() &&
         isValidId(noteId) &&
@@ -167,7 +177,10 @@ service cloud.firestore {
       );
 
       // Complainants query where userId == request.auth.uid, admins can list all
-      allow list: if isSignedIn();
+      allow list: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
 
       allow create: if isSignedIn() &&
         isValidId(complaintId) &&
@@ -192,7 +205,11 @@ service cloud.firestore {
         isAdmin()
       );
 
-      allow list: if isSignedIn();
+      // Only student owner or admin can list their mistakes
+      allow list: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
 
       allow create: if isSignedIn() &&
         isValidId(mistakeId) &&
@@ -213,7 +230,27 @@ service cloud.firestore {
         );
     }
 
-    // 5. Admin Roster
+    // 5. Test Attempts & Exam Scorecards
+    match /test_attempts/{attemptId} {
+      allow get: if isSignedIn() && (
+        existing().userId == request.auth.uid ||
+        isAdmin()
+      );
+
+      allow list: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+
+      allow create: if isSignedIn() &&
+        isValidId(attemptId) &&
+        incoming().userId == request.auth.uid &&
+        isValidTestAttempt(incoming());
+
+      allow update, delete: if isAdmin();
+    }
+
+    // 6. Admin Roster
     match /admins/{adminId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();

@@ -1884,14 +1884,16 @@ export function validateNcertSyllabus(classGrade: string, subject: string, topic
     ch.keyTopics.some(t => t.toLowerCase().includes(queryLower) || queryLower.includes(t.toLowerCase()))
   );
 
+  const hasMatch = Boolean(matchedChapter);
+
   return {
-    isValid: true,
+    isValid: hasMatch,
     normalizedClass: targetClass,
     normalizedSubject: matchedSubjKey,
     matchedChapter,
     suggestedChapters: chapters.map(c => `Ch ${c.number}: ${c.name}`),
     message: matchedChapter 
       ? `Validated against 2026–27 NCERT ${targetClass} ${matchedSubjKey} (Unit: ${matchedChapter.unit}).`
-      : `Broad topic covered under 2026–27 NCERT ${targetClass} ${matchedSubjKey}. Notes will be generated according to CBSE NCERT standard.`
+      : `Topic "${topicQuery}" could not be verified in official 2026–27 NCERT ${targetClass} ${matchedSubjKey} syllabus.`
   };
 }

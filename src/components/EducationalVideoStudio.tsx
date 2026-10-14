@@ -128,8 +128,8 @@ export const EducationalVideoStudio: React.FC<EducationalVideoStudioProps> = ({
         osc.start(ctx.currentTime + i * 0.12);
         osc.stop(ctx.currentTime + i * 0.12 + 1.3);
       });
-    } catch (e) {
-      console.warn('Web Audio tune unavailable:', e);
+    } catch (_) {
+      // Audio autoplay policy handled silently
     }
   };
 

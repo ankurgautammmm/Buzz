@@ -154,12 +154,13 @@ export function parseHandwritingCommand(rawInput: string): CommandParseResult {
   else if (/--jee\b/i.test(cleaned)) { targetExam = 'jee'; cleaned = cleaned.replace(/--jee\b/gi, ''); }
   else if (/--cbse\b/i.test(cleaned)) { targetExam = 'cbse'; cleaned = cleaned.replace(/--cbse\b/gi, ''); }
 
-  // 3. Extract Class (--class 9, --class 10, -c 11, class:10)
+  // 3. Extract Class (--class 9, --class 10, -c 11, class:10, class 10, class 10th)
   const cliClassMatch = cleaned.match(/(?:--class|-c)\s*([0-9]{1,2})/i);
   if (cliClassMatch) {
     cleaned = cleaned.replace(/(?:--class|-c)\s*[0-9]{1,2}/gi, '');
   }
-  const kvClassMatch = cleaned.match(/\bclass:?\s*([0-9]{1,2}(?:th)?|[a-zA-Z0-9\s]+?)(?=\s+(?:subject|chapter|topic|style|paper|ink|pen|font|thinking):|$)/i);
+  const kvClassMatch = cleaned.match(/\bclass:\s*([0-9]{1,2}(?:th)?|[a-zA-Z0-9\s]+?)(?=\s+(?:subject|chapter|topic|style|paper|ink|pen|font|thinking):|$)/i);
+  const naturalClassMatch = cleaned.match(/\bclass\s*([0-9]{1,2}(?:th)?)\b/i);
 
   // 4. Extract other flags
   const subjectMatch = cleaned.match(/\bsubject:?\s*([a-zA-Z0-9\s]+?)(?=\s+(?:class|chapter|topic|style|paper|ink|pen|font|thinking):|$)/i);
@@ -171,7 +172,11 @@ export function parseHandwritingCommand(rawInput: string): CommandParseResult {
   const fontMatch = cleaned.match(/\bfont:?\s*(Caveat|Kalam|Patrick Hand|Indie Flower|Architects Daughter|Homemade Apple)/i);
   const thinkingMatch = cleaned.match(/\bthinking:?\s*(high|standard)/i);
 
-  let classGrade = cliClassMatch ? `Class ${cliClassMatch[1]}` : (kvClassMatch ? kvClassMatch[1].trim() : '');
+  let classGrade = cliClassMatch 
+    ? `Class ${cliClassMatch[1]}` 
+    : (kvClassMatch 
+        ? kvClassMatch[1].trim() 
+        : (naturalClassMatch ? `Class ${naturalClassMatch[1].replace(/th/i, '')}` : ''));
   let subject = subjectMatch ? subjectMatch[1].trim() : '';
   let chapter = chapterMatch ? chapterMatch[1].trim() : '';
   let topic = topicMatch ? topicMatch[1].trim() : '';
@@ -179,6 +184,8 @@ export function parseHandwritingCommand(rawInput: string): CommandParseResult {
   // 5. Natural Language & Topic Discovery
   if (!chapter && !topic) {
     let cleanTopic = cleaned
+      .replace(/\bclass\s*[0-9]{1,2}(?:th)?\b/gi, '')
+      .replace(/\b(?:make|generate|create|synthesize|draw)?\s*(?:handwritten\s*)?notes\s*(?:for|on|about|of)?\s*/gi, '')
       .replace(/\b(?:class|subject|chapter|topic|style|paper|ink|pen|font|thinking):[^\s]+/gi, '')
       .replace(/--[a-zA-Z0-9_-]+/gi, '')
       .trim();
@@ -189,28 +196,28 @@ export function parseHandwritingCommand(rawInput: string): CommandParseResult {
 
       // Intelligent topic-to-syllabus mapper
       const topicLower = cleanTopic.toLowerCase();
-      if (!classGrade) {
+      if (!subject || !classGrade) {
         if (/photosynthesis|respiration|heart|digestion|nephron|life process|light|reflection|refraction|acid|base|metal|carbon/i.test(topicLower)) {
-          classGrade = 'Class 10';
-          subject = 'Science';
+          if (!classGrade) classGrade = 'Class 10';
+          if (!subject) subject = 'Science';
         } else if (/quadratic|real number|polynomial|arithmetic progression|trigonometry/i.test(topicLower)) {
-          classGrade = 'Class 10';
-          subject = 'Mathematics';
+          if (!classGrade) classGrade = 'Class 10';
+          if (!subject) subject = 'Mathematics';
         } else if (/matter|tissue|motion|sound|gravitation|cell|force/i.test(topicLower)) {
-          classGrade = 'Class 9';
-          subject = 'Science';
+          if (!classGrade) classGrade = 'Class 9';
+          if (!subject) subject = 'Science';
         } else if (/electrostat|current electricity|wave optic|ray optic|charge|dipole|transistor|semiconductor/i.test(topicLower)) {
-          classGrade = 'Class 12';
-          subject = 'Physics';
+          if (!classGrade) classGrade = 'Class 12';
+          if (!subject) subject = 'Physics';
         } else if (/solution|electrochem|kinetics|coordination|biomolecule|haloalkane|amine/i.test(topicLower)) {
-          classGrade = 'Class 12';
-          subject = 'Chemistry';
+          if (!classGrade) classGrade = 'Class 12';
+          if (!subject) subject = 'Chemistry';
         } else if (/reproduction|genetics|dna|inheritance|evolution|biotech|ecology|population/i.test(topicLower)) {
-          classGrade = 'Class 12';
-          subject = 'Biology';
+          if (!classGrade) classGrade = 'Class 12';
+          if (!subject) subject = 'Biology';
         } else if (/laws of motion|friction|vector|projectile|work energy|gravitation|thermodynamics/i.test(topicLower)) {
-          classGrade = 'Class 11';
-          subject = 'Physics';
+          if (!classGrade) classGrade = 'Class 11';
+          if (!subject) subject = 'Physics';
         }
       }
     }
@@ -276,36 +283,31 @@ export async function generateHandwrittenNotes(command: CommandParseResult): Pro
   const requestedMode = command.mode || 'detailed';
   const targetExam = command.targetExam || 'cbse';
 
-  const systemInstruction = `You are a CBSE & NCERT National Exam Topper and educational author for Buzzing Brain.
-Your task is to generate AUTHENTIC, EXAM-ORIENTED, AND COMPREHENSIVE AI handwritten study notes that look like they were written by a top student in a real physical notebook.
+  const systemInstruction = `You are an educational author and subject expert for Buzzing Brain.
+Your task is to generate AUTHENTIC, FOCUSED, AND CLEAR study notes for students.
 
-Follow these strict rules:
-1. Target syllabus: 2026–27 NCERT Syllabus for ${validatedClass} ${validatedSubject}. Preserve all official definitions, formulas, and concepts. Never invent facts.
-2. Note Mode: ${requestedMode.toUpperCase()} (${requestedMode === 'formulas' ? 'Focus purely on formulas, variables, and worked numericals' : requestedMode === 'short' ? 'Concise one-shot high yield summary' : requestedMode === 'mindmap' ? 'Hierarchical visual flowchart mindmap' : requestedMode === 'questions' ? 'High probability board questions with step-wise model answers' : 'Complete in-depth chapter notes'}).
-3. Exam Target: ${targetExam.toUpperCase()} (Adjust difficulty, depth, and tips accordingly).
-4. Highlight System:
-   - Blue pen: Normal explanations and derivations.
-   - Yellow highlight: Key concept names and definitions.
-   - Red pen: Warning / common student mistakes (warningMistakes array).
-   - Green: Formula / key numerical results (formulaBlocks array).
-   - Star: Important exam points (starredPoints array).
-5. For Mathematical & Numerical content: Write formulas with clear variable definitions, step-by-step calculations, and boxed final answers with units.
-6. For Science/Biology/Physics/Chemistry/Geography: Include clear hand-drawn diagram specifications with labels and explanation arrows.
-7. Return strictly valid JSON matching the requested schema without markdown backticks.`;
+CRITICAL REQUIREMENT:
+Notes must ONLY contain the clear, accurate, thorough description and conceptual explanation of the topic, and nothing more.
+Do not add extraneous mnemonics, post-it notes, warning traps, sample exam questions, or distracting sidebars.
+Focus 100% on providing a high-quality, clear, and comprehensive description of the topic aligned with the 2026–27 NCERT Syllabus for ${validatedClass} ${validatedSubject}.
 
-  const userPrompt = `Generate authentic handwritten student notes for:
+Follow these rules:
+1. Target syllabus: 2026–27 NCERT Syllabus for ${validatedClass} ${validatedSubject}. Preserve official definitions, governing laws, and scientific accuracy.
+2. Note Content: Provide a crystal-clear, deep, conceptual description of the topic in each section with clear headings and bulleted explanations.
+3. For Mathematical/Science topics: Include the standard governing formula if directly part of the topic description.
+4. Return strictly valid JSON matching the requested schema without markdown backticks.`;
+
+  const userPrompt = `Generate clean study notes containing strictly the description of the topic for:
 Topic / Chapter: ${chapterName}
 Class: ${validatedClass}
 Subject: ${validatedSubject}
 Unit: ${unitName}
 Topic Details: ${command.topic}
 Prescribed Syllabus Topics: ${keyTopics.join(', ') || chapterName}
-Mode: ${requestedMode}
-Target: ${targetExam}
 
 JSON Schema:
 {
-  "title": "${chapterName} : Handwritten Notes",
+  "title": "${chapterName} : Topic Notes",
   "classGrade": "${validatedClass}",
   "subject": "${validatedSubject}",
   "chapter": "${chapterName}",
@@ -313,56 +315,15 @@ JSON Schema:
   "mode": "${requestedMode}",
   "targetExam": "${targetExam}",
   "syllabusContext": "Official NCERT ${validatedClass} ${validatedSubject} (2026–27 Session)",
-  "examWeightageTip": "Expected board marks distribution and key question types",
   "sections": [
     {
-      "heading": "Chapter / Concept Heading",
-      "subheading": "In-depth Subtopic",
-      "content": "Detailed theoretical explanation in student handwriting friendly tone.",
-      "bullets": ["Point 1", "Point 2", "Point 3"],
-      "importantFormulas": ["Core formula with variables"],
-      "formulaBlocks": [
-        {
-          "title": "Governing Formula Name",
-          "formula": "Standard formula notation",
-          "variables": ["v = velocity in m/s", "t = time in s"],
-          "exampleProblem": {
-            "statement": "Sample numerical problem",
-            "steps": ["Step 1: Given values", "Step 2: Formula substitution", "Step 3: Calculation"],
-            "boxedAnswer": "Final Answer",
-            "units": "SI units"
-          }
-        }
-      ],
-      "highlighterWords": ["Important Concept", "Key Term"],
-      "warningMistakes": ["Common exam blunder or trap students make here"],
-      "starredPoints": ["High yield examination question alert"],
-      "postItNote": {
-        "color": "yellow",
-        "title": "Topper Memory Hack",
-        "text": "Specific mnemonic or memory aid"
-      },
-      "marginAnnotation": "✎ NCERT Core",
-      "diagram": {
-        "title": "Hand-Drawn Diagram Title",
-        "type": "biology_anatomy",
-        "caption": "Accurate student diagram reproducible in exams",
-        "asciiSketch": "Clean structured sketch",
-        "keySteps": ["Step 1: Draw outline", "Step 2: Label arrows"],
-        "labels": [
-          {"label": "Part A", "arrow": "Left side"},
-          {"label": "Part B", "arrow": "Right side"}
-        ]
-      }
+      "heading": "Topic / Concept Heading",
+      "subheading": "Core Sub-concept",
+      "content": "Deep, comprehensive, and crystal-clear description and explanation of the topic.",
+      "bullets": ["Key descriptive point 1", "Key descriptive point 2", "Key descriptive point 3"],
+      "importantFormulas": ["Governing formula if applicable"]
     }
-  ],
-  "topperMnemonics": ["Mnemonic 1", "Mnemonic 2"],
-  "ncertExamAlert": "Warning on where students commonly lose marks in board evaluations",
-  "quickSummaryReview": ["Summary point 1", "Summary point 2", "Summary point 3"],
-  "sampleQuestion": {
-    "question": "Realistic CBSE Board Exam Question",
-    "answer": "Complete step-by-step model answer"
-  }
+  ]
 }`;
 
   // 2b. Call Gemini safely with cache and automatic quota protection
@@ -390,6 +351,21 @@ JSON Schema:
     }
   } else {
     parsedPayload = buildCuratedNcertNote(validatedClass, validatedSubject, chapterName, unitName, command.topic, keyTopics);
+  }
+
+  // Ensure notes strictly have only the description of the topic
+  if (parsedPayload && Array.isArray(parsedPayload.sections)) {
+    parsedPayload.sections = parsedPayload.sections.map(s => ({
+      heading: s.heading,
+      subheading: s.subheading,
+      content: s.content,
+      bullets: s.bullets,
+      importantFormulas: s.importantFormulas,
+    }));
+    delete (parsedPayload as any).topperMnemonics;
+    delete (parsedPayload as any).ncertExamAlert;
+    delete (parsedPayload as any).quickSummaryReview;
+    delete (parsedPayload as any).sampleQuestion;
   }
 
   // 4. Build Default Style Config

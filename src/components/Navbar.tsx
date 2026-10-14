@@ -19,8 +19,12 @@ import {
   LayoutDashboard,
   Layers,
   Calendar,
-  Users
+  Users,
+  Download,
+  Heart,
+  Sliders
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { UserProfile, AuthStateStatus } from '../types';
 
 export type NavTab = 
@@ -55,6 +59,7 @@ interface NavbarProps {
   onOpenChat: () => void;
   onOpenComplaint: () => void;
   onOpenProfile?: () => void;
+  onGoToLabs?: (subTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -70,6 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenChat,
   onOpenComplaint,
   onOpenProfile,
+  onGoToLabs,
 }) => {
   const isAdmin = Boolean(
     user?.role === 'admin' || 
@@ -77,6 +83,26 @@ export const Navbar: React.FC<NavbarProps> = ({
     user?.email?.toLowerCase() === 'gautamankur0101@gmail.com' ||
     user?.email?.toLowerCase() === 'pathpriya99@gmail.com'
   );
+
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstall = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      alert('To install Buzzing Brain, open your browser menu and tap "Add to Home Screen" or "Install App".');
+      return;
+    }
+    deferredPrompt.prompt();
+    setDeferredPrompt(null);
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-black/75 backdrop-blur-xl border-b border-white/10 text-slate-100">
@@ -236,17 +262,67 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Community</span>
             </button>
 
-            <button
-              onClick={() => onTabChange('labs')}
-              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
-                currentTab === 'labs'
-                  ? 'text-white bg-white/15'
-                  : 'hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <GitBranch className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Labs &amp; Mind Maps</span>
-            </button>
+            {/* 3D Anatomical Organs, Virtual Tools & Mind Maps Hub */}
+            <div className="relative group">
+              <button
+                onClick={() => {
+                  if (onGoToLabs) {
+                    onGoToLabs('organs3d');
+                  } else {
+                    onTabChange('labs');
+                  }
+                }}
+                className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  currentTab === 'labs'
+                    ? 'text-white bg-white/15 ring-1 ring-cyan-400/40 shadow-sm'
+                    : 'hover:text-white hover:bg-white/5'
+                }`}
+                title="3D Anatomical Organs, Calibrated Virtual Tools & Mind Maps"
+              >
+                <Heart className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+                <span>3D Organs &amp; Labs</span>
+                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-cyan-400/20 text-cyan-300 font-mono font-bold border border-cyan-400/30">
+                  3D
+                </span>
+              </button>
+
+              {/* Instant Flyout Menu for 3D Organs, Virtual Tools & Mind Maps */}
+              <div className="absolute top-full left-0 mt-1 hidden group-hover:flex flex-col bg-[#070b1e] border border-cyan-400/30 rounded-2xl shadow-2xl p-2 min-w-[240px] z-50 backdrop-blur-xl animate-in fade-in slide-in-from-top-1">
+                <div className="px-2 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 border-b border-white/10 mb-1">
+                  Scientific Visualization Hub
+                </div>
+                <button
+                  onClick={() => onGoToLabs ? onGoToLabs('organs3d') : onTabChange('labs')}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold hover:bg-rose-500/15 text-slate-200 hover:text-white transition-colors cursor-pointer"
+                >
+                  <Heart className="w-4 h-4 text-rose-400 shrink-0" />
+                  <div>
+                    <div className="font-bold text-white text-[11px]">3D Anatomical Organs</div>
+                    <div className="text-[10px] text-slate-400">Heart, Brain, Eye, Nephron, Cells, DNA</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => onGoToLabs ? onGoToLabs('virtual_tools') : onTabChange('labs')}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold hover:bg-cyan-500/15 text-slate-200 hover:text-white transition-colors cursor-pointer"
+                >
+                  <Sliders className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <div>
+                    <div className="font-bold text-white text-[11px]">Calibrated Virtual Tools</div>
+                    <div className="text-[10px] text-slate-400">1000x Microscope, Vernier, Titration</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => onGoToLabs ? onGoToLabs('mindmaps') : onTabChange('labs')}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold hover:bg-amber-500/15 text-slate-200 hover:text-white transition-colors cursor-pointer"
+                >
+                  <GitBranch className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div>
+                    <div className="font-bold text-white text-[11px]">Mind Maps Library</div>
+                    <div className="text-[10px] text-slate-400">Class 9–12 Complete Trees</div>
+                  </div>
+                </button>
+              </div>
+            </div>
 
             <button
               onClick={() => onTabChange('books')}
@@ -380,6 +456,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
+            {/* Install PWA Button */}
+            <button
+              onClick={handleInstallClick}
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white font-medium text-xs border border-white/15 transition-all cursor-pointer"
+              title="Install Buzzing Brain PWA App for offline study"
+            >
+              <Download className="w-3.5 h-3.5 text-amber-400" />
+              <span>Install App</span>
+            </button>
+
             {/* Astra White Pill CTA Button: "Try Buzzing Brain" */}
             <button
               onClick={() => onTabChange('studio')}
@@ -447,10 +533,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             Community
           </button>
           <button
-            onClick={() => onTabChange('labs')}
-            className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'labs' ? 'text-cyan-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
+            onClick={() => onGoToLabs ? onGoToLabs('organs3d') : onTabChange('labs')}
+            className={`px-3 py-1 rounded-lg shrink-0 flex items-center gap-1.5 ${currentTab === 'labs' ? 'text-cyan-300 font-bold bg-white/15' : 'hover:bg-white/5'}`}
           >
-            Labs &amp; Mind Maps
+            <Heart className="w-3 h-3 text-rose-400" />
+            <span>3D Organs &amp; Labs</span>
           </button>
           <button
             onClick={() => onTabChange('books')}

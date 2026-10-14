@@ -109,7 +109,7 @@ export interface NoteContentPayload {
   pages?: NotebookPage[]; // Multi-page notebook architecture
   topperMnemonics?: string[];
   ncertExamAlert?: string;
-  quickSummaryReview: string[];
+  quickSummaryReview?: string[];
   sampleQuestion?: {
     question: string;
     answer: string;
@@ -214,6 +214,25 @@ export interface MistakeItem {
   timestamp: string;
   resolved: boolean;
   notes?: string;
+}
+
+export interface TestAttemptRecord {
+  id: string;
+  userId: string;
+  testId: string;
+  testTitle: string;
+  classGrade: string;
+  subject: string;
+  chapter: string;
+  score: number;
+  maxScore: number;
+  percentage: number;
+  correctCount: number;
+  wrongCount: number;
+  unattemptedCount: number;
+  examPattern: string;
+  percentile: string;
+  timestamp: string;
 }
 
 export interface SpacedRevisionTopic {

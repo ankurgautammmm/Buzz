@@ -5,7 +5,7 @@ import { NCERT_SYLLABUS } from './ncertSyllabus';
  * High-Yield Curated NCERT Full Notes Repository
  * Every chapter has full, comprehensive topper notes matching the 2-page handwritten register format.
  */
-export const COMPREHENSIVE_CHAPTER_NOTES: Record<string, NoteContentPayload> = {
+const RAW_COMPREHENSIVE_CHAPTER_NOTES: Record<string, NoteContentPayload> = {
   // 1. Class 9 Science: Chapter 5 - The Fundamental Unit of Life: Cell
   "Class 9:Science:The Fundamental Unit of Life: Cell": {
     title: "The Fundamental Unit of Life : Cell",
@@ -1153,38 +1153,145 @@ export function synthesizeChapterNoteFromSyllabus(
 }
 
 /**
+ * Sanitizes any note payload so it strictly contains only the description of the topic,
+ * omitting warning traps, mnemonics, sticky note hacks, and exam questions.
+ */
+export function sanitizeNoteToTopicDescription(note: NoteContentPayload): NoteContentPayload {
+  if (!note) return note;
+  const cleanSections = (note.sections || []).map(s => {
+    const cleanSection: any = {
+      heading: s.heading,
+      subheading: s.subheading,
+      content: s.content,
+      bullets: s.bullets,
+      importantFormulas: s.importantFormulas,
+    };
+    if (s.diagram) cleanSection.diagram = s.diagram;
+    if (s.highlighterWords) cleanSection.highlighterWords = s.highlighterWords;
+    return cleanSection;
+  });
+
+  const cleaned: NoteContentPayload = {
+    title: note.title,
+    classGrade: note.classGrade,
+    subject: note.subject,
+    chapter: note.chapter,
+    topic: note.topic,
+    syllabusContext: note.syllabusContext,
+    examWeightageTip: note.examWeightageTip,
+    sections: cleanSections,
+  };
+
+  return cleaned;
+}
+
+export const COMPREHENSIVE_CHAPTER_NOTES: Record<string, NoteContentPayload> = Object.fromEntries(
+  Object.entries(RAW_COMPREHENSIVE_CHAPTER_NOTES).map(([k, v]) => [k, sanitizeNoteToTopicDescription(v)])
+);
+
+/**
  * Helper to fetch a comprehensive curated note by class, subject, and chapter.
  * If an exact pre-curated note exists, returns it; otherwise synthesizes a bespoke
  * chapter note matching the exact chapter name and syllabus key topics.
+ * Strictly sanitized so notes only contain the description of the topic.
  */
 export function getCuratedChapterNote(classGrade: string, subject: string, chapter: string): NoteContentPayload {
   const normalizedClass = classGrade.trim();
   const normalizedSubj = subject.trim();
   const normalizedCh = chapter.trim().toLowerCase();
 
+  let targetNote: NoteContentPayload;
+
   // Special topic shortcuts for explicit requests
   if (/photosynthesis/i.test(normalizedCh)) {
-    return COMPREHENSIVE_CHAPTER_NOTES["Class 10:Science:Photosynthesis"];
-  }
-  if (/quadratic/i.test(normalizedCh)) {
-    return COMPREHENSIVE_CHAPTER_NOTES["Class 10:Mathematics:Quadratic Equations"];
-  }
-  if (/electric charge|coulomb|gauss/i.test(normalizedCh)) {
-    return COMPREHENSIVE_CHAPTER_NOTES["Class 12:Physics:Electric Charges and Fields"];
-  }
-
-  // 1. Check exact pre-curated full notes
-  for (const [key, note] of Object.entries(COMPREHENSIVE_CHAPTER_NOTES)) {
-    const [c, s, ch] = key.split(':');
-    if (
-      c.toLowerCase() === normalizedClass.toLowerCase() &&
-      s.toLowerCase() === normalizedSubj.toLowerCase() &&
-      (ch.toLowerCase().includes(normalizedCh) || normalizedCh.includes(ch.toLowerCase()))
-    ) {
-      return note;
+    targetNote = COMPREHENSIVE_CHAPTER_NOTES["Class 10:Science:Photosynthesis"];
+  } else if (/quadratic/i.test(normalizedCh)) {
+    targetNote = COMPREHENSIVE_CHAPTER_NOTES["Class 10:Mathematics:Quadratic Equations"];
+  } else if (/electric charge|coulomb|gauss/i.test(normalizedCh)) {
+    targetNote = COMPREHENSIVE_CHAPTER_NOTES["Class 12:Physics:Electric Charges and Fields"];
+  } else {
+    // 1. Check exact pre-curated full notes
+    let matched: NoteContentPayload | null = null;
+    for (const [key, note] of Object.entries(COMPREHENSIVE_CHAPTER_NOTES)) {
+      const [c, s, ch] = key.split(':');
+      if (
+        c.toLowerCase() === normalizedClass.toLowerCase() &&
+        s.toLowerCase() === normalizedSubj.toLowerCase() &&
+        (ch.toLowerCase().includes(normalizedCh) || normalizedCh.includes(ch.toLowerCase()))
+      ) {
+        matched = note;
+        break;
+      }
     }
+    targetNote = matched || synthesizeChapterNoteFromSyllabus(normalizedClass, normalizedSubj, chapter);
   }
 
-  // 2. Synthesize a rich, bespoke, chapter-specific note for this exact chapter name!
-  return synthesizeChapterNoteFromSyllabus(normalizedClass, normalizedSubj, chapter);
+  return sanitizeNoteToTopicDescription(targetNote);
+}
+
+export interface StrictTopicNotes extends NoteContentPayload {
+  notes: string;
+  keyFormulas?: string[];
+  examAlerts?: string[];
+}
+
+/**
+ * Strict Topic Notes Extractor:
+ * Ensures generated test only shows the notes of the specific topic which is the input,
+ * and strictly not more than that. Excludes unrelated chapters and filters down strictly
+ * to the input topic's concepts and descriptions.
+ */
+export function getStrictTopicNotes(
+  inputTopic: string,
+  classGrade: string = 'Class 10',
+  subject: string = 'Science'
+): StrictTopicNotes {
+  const cleanInput = (inputTopic || 'General Topic').trim();
+  const rawNote = getCuratedChapterNote(classGrade, subject, cleanInput);
+  const sanitized = sanitizeNoteToTopicDescription(rawNote);
+
+  // Filter sections down strictly to the specific input topic
+  const inputKeywords = cleanInput.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  
+  let matchingSections = sanitized.sections.filter(s => {
+    const text = `${s.heading} ${s.subheading || ''} ${s.content} ${(s.bullets || []).join(' ')}`.toLowerCase();
+    return inputKeywords.some(kw => text.includes(kw));
+  });
+
+  // If no sections matched individual keywords, keep the primary section focused on the input
+  if (matchingSections.length === 0 && sanitized.sections.length > 0) {
+    matchingSections = [sanitized.sections[0]];
+  }
+
+  // Ensure headings strictly reflect the input topic
+  const focusedSections = matchingSections.map((s) => ({
+    ...s,
+    heading: s.heading.toLowerCase().includes(cleanInput.toLowerCase()) 
+      ? s.heading 
+      : `${cleanInput} • Conceptual Description`,
+  }));
+
+  const fullTextNotes = focusedSections
+    .map(s => `${s.heading}:\n${s.content}${s.bullets && s.bullets.length > 0 ? '\n' + s.bullets.map(b => `• ${b}`).join('\n') : ''}`)
+    .join('\n\n');
+
+  const formulas = focusedSections
+    .flatMap(s => (s as any).keyFormula ? [(s as any).keyFormula] : (s.importantFormulas || []))
+    .filter((f): f is string => Boolean(f));
+
+  return {
+    title: `${cleanInput} — Topic Revision Notes`,
+    classGrade: sanitized.classGrade,
+    subject: sanitized.subject,
+    chapter: sanitized.chapter,
+    topic: cleanInput,
+    syllabusContext: `Focused Topic Notes for: ${cleanInput}`,
+    examWeightageTip: sanitized.examWeightageTip || `High-yield topic focus strictly covering ${cleanInput}.`,
+    sections: focusedSections,
+    notes: fullTextNotes || `${cleanInput} foundational concepts and board exam principles.`,
+    keyFormulas: formulas,
+    examAlerts: [
+      `Board & Competitive Focus: High-yield revision points strictly isolated to "${cleanInput}".`
+    ]
+  };
 }

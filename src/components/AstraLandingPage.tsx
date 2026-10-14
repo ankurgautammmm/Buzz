@@ -19,7 +19,12 @@ import {
   LayoutDashboard,
   Zap,
   Calendar,
-  Users
+  Users,
+  Heart,
+  Sliders,
+  Atom,
+  Eye,
+  Activity
 } from 'lucide-react';
 import { UserProfile } from '../types';
 
@@ -34,7 +39,7 @@ interface AstraLandingPageProps {
   onGoToCourses?: () => void;
   onGoToVideos?: () => void;
   onGoToScanner?: () => void;
-  onGoToLabs?: () => void;
+  onGoToLabs?: (subTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations') => void;
   onGoToPlanner?: () => void;
   onGoToCommunity?: () => void;
   onSignIn: () => void;
@@ -280,24 +285,66 @@ export const AstraLandingPage: React.FC<AstraLandingPageProps> = ({
             </div>
           </div>
 
-          {/* Card 6: Interactive Labs & Mind Maps */}
+          {/* Card 6: 3D Anatomical Organs, Calibrated Virtual Tools & Mind Maps */}
           <div 
-            onClick={() => onGoToLabs ? onGoToLabs() : onGoToStudio()}
-            className="p-6 rounded-3xl astra-card border border-white/10 hover:border-cyan-400/40 transition-all cursor-pointer group space-y-4 flex flex-col justify-between"
+            className="p-6 rounded-3xl astra-card border border-cyan-400/30 hover:border-cyan-400/60 transition-all cursor-pointer group space-y-4 flex flex-col justify-between shadow-lg shadow-cyan-950/20"
           >
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
-                <GitBranch className="w-6 h-6" />
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                  <Heart className="w-6 h-6 text-rose-400" />
+                </div>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300 border border-cyan-400/30">
+                  Interactive 3D &amp; Labs
+                </span>
               </div>
               <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">
-                Mind Maps &amp; Virtual Labs
+                3D Organs, Virtual Tools &amp; Mind Maps
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Expandable conceptual mind maps alongside interactive virtual science experiments: Ohm's Law circuit simulation, Convex Lens ray optics, and Simple Pendulums.
+                Interact with 3D human organs (Heart, Brain, Eye, Nephron, Cells, DNA), calibrated virtual instruments (1000x Optical Microscope, Vernier Calipers, Titration Station), and 200+ chapter mind maps.
               </p>
+
+              {/* Direct Quick Launch Buttons */}
+              <div className="grid grid-cols-3 gap-1.5 pt-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onGoToLabs) onGoToLabs('organs3d');
+                  }}
+                  className="px-2 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-[10px] font-bold text-rose-300 hover:text-white transition-all text-center cursor-pointer"
+                >
+                  3D Organs
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onGoToLabs) onGoToLabs('virtual_tools');
+                  }}
+                  className="px-2 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-[10px] font-bold text-cyan-300 hover:text-white transition-all text-center cursor-pointer"
+                >
+                  Virtual Tools
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onGoToLabs) onGoToLabs('mindmaps');
+                  }}
+                  className="px-2 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-[10px] font-bold text-amber-300 hover:text-white transition-all text-center cursor-pointer"
+                >
+                  Mind Maps
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-400 pt-2 border-t border-white/5">
-              <span>Explore Labs</span>
+
+            <div 
+              onClick={() => onGoToLabs ? onGoToLabs('organs3d') : onGoToStudio()}
+              className="flex items-center justify-between text-xs font-bold text-cyan-400 pt-3 border-t border-white/5 hover:text-cyan-300"
+            >
+              <span>Explore 3D Visualization Hub</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -518,6 +565,199 @@ export const AstraLandingPage: React.FC<AstraLandingPageProps> = ({
             <span>Explore 2026–27 Syllabus &amp; Embedded PDF</span>
             <ChevronRight className="w-4 h-4" />
           </button>
+        </div>
+      </section>
+
+      {/* 3.5 SCIENTIFIC VISUALIZATION & 3D LABS SHOWCASE */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+        <div className="max-w-3xl space-y-4 text-left">
+          <div className="inline-flex items-center gap-2 text-xs font-bold tracking-wider uppercase text-cyan-400">
+            <Heart className="w-4 h-4 text-rose-400" />
+            <span>Interactive Virtual Labs &amp; 3D Biology Suite</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            3D Anatomical Organs, Calibrated Virtual Science Tools &amp; Mind Maps.
+          </h2>
+          <p className="text-slate-400 text-base leading-relaxed">
+            Move beyond static 2D textbook drawings. Rotate 3D pulsing anatomical organs, adjust microscope focus knobs, calibrate vernier calipers, conduct acid-base titrations, and explore expansive mind maps across all NCERT chapters.
+          </p>
+        </div>
+
+        {/* 3 Showcase Pillars */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card A: 3D Anatomical & Biological Organs */}
+          <div className="rounded-3xl bg-[#070b1a] border border-rose-500/30 p-6 md:p-8 space-y-6 flex flex-col justify-between shadow-xl hover:border-rose-500/60 transition-all group">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
+                  <Heart className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">
+                  3D Anatomy
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold text-white group-hover:text-rose-300 transition-colors">
+                  3D Anatomical &amp; Biological Organs
+                </h3>
+                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                  Real-time interactive anatomical models with 3D rotation, cross-sectional cutaways, and physiological function inspection.
+                </p>
+              </div>
+
+              <ul className="space-y-2 text-xs text-slate-300 pt-2 border-t border-white/5 font-medium">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                  <span><strong>Human Heart:</strong> 4 pulsing chambers, valves &amp; blood flow</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                  <span><strong>Human Brain:</strong> Cerebrum lobes, cerebellum &amp; medulla</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                  <span><strong>Human Eye:</strong> Accommodation, myopia &amp; ray optics</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span><strong>Nephron &amp; Kidney:</strong> Ultrafiltration &amp; Henle loop</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span><strong>Plant vs Animal Cells:</strong> Organelle dissection</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span><strong>DNA Double Helix:</strong> Watson-Crick base pairing</span>
+                </li>
+              </ul>
+            </div>
+
+            <button
+              onClick={() => onGoToLabs ? onGoToLabs('organs3d') : onGoToStudio()}
+              className="w-full py-3 px-4 rounded-xl bg-rose-500/20 hover:bg-rose-500 text-rose-200 hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border border-rose-500/40"
+            >
+              <span>Launch 3D Organ Explorer</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Card B: Calibrated Virtual Science Tools */}
+          <div className="rounded-3xl bg-[#070b1a] border border-cyan-500/30 p-6 md:p-8 space-y-6 flex flex-col justify-between shadow-xl hover:border-cyan-500/60 transition-all group">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                  <Sliders className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
+                  Calibrated Labs
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">
+                  Calibrated Virtual Science Tools
+                </h3>
+                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                  Accurately calibrated laboratory instruments simulating real physical and chemical apparatus required in CBSE board practicals.
+                </p>
+              </div>
+
+              <ul className="space-y-2 text-xs text-slate-300 pt-2 border-t border-white/5 font-medium">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                  <span><strong>1000x Optical Microscope:</strong> Coarse/fine focus blur &amp; slides</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span><strong>Vernier Calipers:</strong> 0.01 mm precision slider &amp; least count</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-pink-400"></span>
+                  <span><strong>Acid-Base Titration:</strong> Burette drops &amp; pH indicators</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span><strong>Ray Optics Bench:</strong> Focal length &amp; image tracing</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span><strong>Circuit Breadboard:</strong> Series &amp; parallel Ohm's law</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                  <span><strong>SHM Pendulum:</strong> Earth, Moon &amp; Jupiter gravity tests</span>
+                </li>
+              </ul>
+            </div>
+
+            <button
+              onClick={() => onGoToLabs ? onGoToLabs('virtual_tools') : onGoToStudio()}
+              className="w-full py-3 px-4 rounded-xl bg-cyan-500/20 hover:bg-cyan-500 text-cyan-200 hover:text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border border-cyan-500/40"
+            >
+              <span>Open Calibrated Virtual Tools</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Card C: Hierarchical Mind Maps Library */}
+          <div className="rounded-3xl bg-[#070b1a] border border-amber-500/30 p-6 md:p-8 space-y-6 flex flex-col justify-between shadow-xl hover:border-amber-500/60 transition-all group">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                  <GitBranch className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                  Curriculum Trees
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold text-white group-hover:text-amber-300 transition-colors">
+                  Hierarchical Mind Maps Library
+                </h3>
+                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                  Huge visual knowledge trees organizing every chapter into interconnected branches with formulas, definitions, and rapid revision notes.
+                </p>
+              </div>
+
+              <ul className="space-y-2 text-xs text-slate-300 pt-2 border-t border-white/5 font-medium">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                  <span><strong>200+ NCERT Chapters:</strong> Physics, Chemistry, Biology, Math</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                  <span><strong>Class 9, 10, 11 &amp; 12:</strong> Fully indexed and aligned</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                  <span><strong>One-Click Expand &amp; Collapse:</strong> Rapid revision</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                  <span><strong>Instant Search &amp; Filter:</strong> Find any concept in seconds</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span><strong>Deep Detail Cards:</strong> Formulas, SI units &amp; exam tips</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span><strong>Interactive Node Inspection:</strong> Click any concept to view notes</span>
+                </li>
+              </ul>
+            </div>
+
+            <button
+              onClick={() => onGoToLabs ? onGoToLabs('mindmaps') : onGoToStudio()}
+              className="w-full py-3 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-400 text-amber-200 hover:text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border border-amber-500/40"
+            >
+              <span>Browse Mind Maps Library</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </section>
 

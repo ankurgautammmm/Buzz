@@ -22,9 +22,11 @@ import {
   PERSISTED_NOTES, 
   STUDENT_PROGRESS, 
   buildChapterId,
-  StudentProgressRecord 
+  StudentProgressRecord,
+  savePersistedNotesToDisk,
+  saveStudentProgressToDisk
 } from './curriculumService';
-import { getCuratedChapterNote, COMPREHENSIVE_CHAPTER_NOTES } from '../src/data/curatedChapterNotes';
+import { getCuratedChapterNote, COMPREHENSIVE_CHAPTER_NOTES, getStrictTopicNotes } from '../src/data/curatedChapterNotes';
 import { 
   generateAiQuestions, 
   VERIFIED_QUESTION_BANK, 
@@ -35,6 +37,65 @@ export const apiRouter = express.Router();
 
 // Allow up to 15mb payload for image question uploads
 apiRouter.use(express.json({ limit: '15mb' }));
+
+// ============================================================================
+// P0 Security & Protection: Rate Limiting Token Bucket
+// ============================================================================
+interface RateLimitBucket {
+  tokens: number;
+  lastRefill: number;
+}
+const rateLimitMap = new Map<string, RateLimitBucket>();
+const MAX_BURST_TOKENS = 60;
+const REFILL_RATE_PER_SEC = 1.0; // up to 60 req/min for student study pipelines
+
+function aiRateLimiter(req: Request, res: Response, next: () => void) {
+  const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || '127.0.0.1';
+  const now = Date.now();
+  let bucket = rateLimitMap.get(clientIp);
+
+  if (!bucket) {
+    bucket = { tokens: MAX_BURST_TOKENS, lastRefill: now };
+    rateLimitMap.set(clientIp, bucket);
+  } else {
+    const elapsedSec = (now - bucket.lastRefill) / 1000;
+    bucket.tokens = Math.min(MAX_BURST_TOKENS, bucket.tokens + elapsedSec * REFILL_RATE_PER_SEC);
+    bucket.lastRefill = now;
+  }
+
+  if (bucket.tokens < 1) {
+    res.setHeader('Retry-After', '3');
+    return res.status(429).json({
+      error: 'Rate limit reached for AI educational generation. Please wait a few seconds before requesting again.',
+      retryAfterSec: 3,
+    });
+  }
+
+  bucket.tokens -= 1;
+  next();
+}
+
+// Trusted Administrators
+const envAdminEmails = (process.env.ADMIN_EMAILS || '')
+  .split(',')
+  .map(e => e.trim().toLowerCase())
+  .filter(Boolean);
+
+const TRUSTED_ADMIN_EMAILS = [
+  'brainyyybuzz@gmail.com',
+  'gautamankur0101@gmail.com',
+  'pathpriya99@gmail.com',
+  ...envAdminEmails
+];
+
+function adminAuthMiddleware(req: Request, res: Response, next: () => void) {
+  const adminHeader = (req.headers['x-admin-email'] as string || req.headers['authorization'] || '').toLowerCase();
+  const isMatch = TRUSTED_ADMIN_EMAILS.some(email => adminHeader.includes(email.toLowerCase()));
+  if (!isMatch && process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ error: 'Administrative authorization credentials required.' });
+  }
+  next();
+}
 
 // Health check
 apiRouter.get('/health', (_req: Request, res: Response) => {
@@ -68,7 +129,7 @@ apiRouter.post('/handwriting/parse', (req: Request, res: Response) => {
 });
 
 // Full Pipeline: Parse -> Validate Syllabus -> Retrieve NCERT Context -> AI Generation -> JSON Validation
-apiRouter.post('/handwriting/generate', async (req: Request, res: Response) => {
+apiRouter.post('/handwriting/generate', aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { command, options } = req.body;
     if (!command || typeof command !== 'string') {
@@ -103,7 +164,7 @@ apiRouter.post('/handwriting/generate', async (req: Request, res: Response) => {
 });
 
 // Multi-turn Chatbot endpoint with multilingual & intuitive pedagogy support
-apiRouter.post('/chat', async (req: Request, res: Response) => {
+apiRouter.post('/chat', aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { messages, contextNote, language, explainMode, classGrade } = req.body;
     if (!Array.isArray(messages)) {
@@ -123,7 +184,7 @@ apiRouter.post('/chat', async (req: Request, res: Response) => {
 });
 
 // AI Image Question Solver Endpoint
-apiRouter.post('/ai/solve-image', async (req: Request, res: Response) => {
+apiRouter.post('/ai/solve-image', aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { imageBase64, userPrompt, subject } = req.body;
     if (!imageBase64) {
@@ -139,7 +200,7 @@ apiRouter.post('/ai/solve-image', async (req: Request, res: Response) => {
 });
 
 // AI Handwriting Answer Checker Endpoint
-apiRouter.post('/ai/check-handwriting', async (req: Request, res: Response) => {
+apiRouter.post('/ai/check-handwriting', aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { imageBase64, answerText, questionText, maxMarks } = req.body;
     if (!imageBase64 && !answerText) {
@@ -155,7 +216,7 @@ apiRouter.post('/ai/check-handwriting', async (req: Request, res: Response) => {
 });
 
 // AI Custom Chapter Test Generator Endpoint
-apiRouter.post('/ai/generate-test', async (req: Request, res: Response) => {
+apiRouter.post('/ai/generate-test', aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { classGrade, subject, chapter, difficulty, count, questionTypes } = req.body;
     if (!chapter) {
@@ -172,7 +233,10 @@ apiRouter.post('/ai/generate-test', async (req: Request, res: Response) => {
       count: targetCount,
     });
 
-    return res.json({ success: true, count: questions.length, questions });
+    // Provide topic notes exclusively covering the input topic and not more than that
+    const topicNotes = getStrictTopicNotes(chapter, classGrade, subject);
+
+    return res.json({ success: true, count: questions.length, questions, topicNotes });
   } catch (error) {
     console.error('Error in /ai/generate-test:', error);
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Test generation failed' });
@@ -180,7 +244,7 @@ apiRouter.post('/ai/generate-test', async (req: Request, res: Response) => {
 });
 
 // Dedicated Questions API: Generate exactly 10 (or custom count) validated MCQs adhering strictly to the schema
-apiRouter.post('/questions/generate', async (req: Request, res: Response) => {
+apiRouter.post('/questions/generate', aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { classLevel, subject, chapter, topic, difficulty, count } = req.body;
     
@@ -234,7 +298,7 @@ apiRouter.get('/questions', async (req: Request, res: Response) => {
 });
 
 // AI Chapter Mind Map Generator Endpoint
-apiRouter.post('/ai/generate-mindmap', async (req: Request, res: Response) => {
+apiRouter.post('/ai/generate-mindmap', aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { classGrade, subject, chapter } = req.body;
     if (!chapter) {
@@ -254,7 +318,7 @@ apiRouter.post('/ai/generate-mindmap', async (req: Request, res: Response) => {
 });
 
 // AI Textbook-to-Complete-Course Generator Endpoint
-apiRouter.post('/ai/generate-course', async (req: Request, res: Response) => {
+apiRouter.post('/ai/generate-course', aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { textbookText, topic, chapter, classGrade, subject } = req.body;
     if (!chapter && !topic && !textbookText) {
@@ -277,7 +341,7 @@ apiRouter.post('/ai/generate-course', async (req: Request, res: Response) => {
 });
 
 // AI Educational Video Script Generator Endpoint
-apiRouter.post('/ai/generate-video-script', async (req: Request, res: Response) => {
+apiRouter.post('/ai/generate-video-script', aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { topic, classGrade, subject, language, durationMinutes, template } = req.body;
     if (!topic) {
@@ -301,7 +365,7 @@ apiRouter.post('/ai/generate-video-script', async (req: Request, res: Response) 
 });
 
 // Regenerate Individual Handwritten Note Section
-apiRouter.post('/handwriting/regenerate-section', async (req: Request, res: Response) => {
+apiRouter.post('/handwriting/regenerate-section', aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { heading, currentContent, chapter, classGrade, subject, feedback } = req.body;
     if (!heading) {
@@ -494,6 +558,7 @@ apiRouter.post('/chapters/:chapterId/notes/regenerate', async (req: Request, res
         isVerified: true,
       },
     });
+    savePersistedNotesToDisk();
 
     return res.json({
       success: true,
@@ -527,6 +592,7 @@ apiRouter.patch('/notes/:notesId', (req: Request, res: Response) => {
   if (title) persisted.note.title = title;
   if (Array.isArray(sections)) persisted.note.sections = sections;
   persisted.metadata.updatedAt = new Date().toISOString();
+  savePersistedNotesToDisk();
 
   res.json({ success: true, noteId: req.params.notesId, note: persisted.note, metadata: persisted.metadata });
 });
@@ -538,6 +604,7 @@ apiRouter.delete('/notes/:notesId', (req: Request, res: Response) => {
     return res.status(404).json({ error: `Note not found: ${req.params.notesId}` });
   }
   PERSISTED_NOTES.delete(req.params.notesId);
+  savePersistedNotesToDisk();
   res.json({ success: true, message: `Note deleted: ${req.params.notesId}` });
 });
 
@@ -722,6 +789,7 @@ apiRouter.put('/notes/:notesId/progress', (req: Request, res: Response) => {
   };
 
   STUDENT_PROGRESS.set(key, record);
+  saveStudentProgressToDisk();
   res.json({ success: true, progress: record });
 });
 
@@ -730,7 +798,7 @@ apiRouter.put('/notes/:notesId/progress', (req: Request, res: Response) => {
 // ============================================================================
 
 // POST /api/admin/curriculum/import — Import new curriculum definition
-apiRouter.post('/admin/curriculum/import', (req: Request, res: Response) => {
+apiRouter.post('/admin/curriculum/import', adminAuthMiddleware, (req: Request, res: Response) => {
   const { board, academicSession, version, sourceUrl, chapters } = req.body;
   const curriculumId = `${(board || 'cbse').toLowerCase()}-${(academicSession || '2026-27').replace(/[^a-z0-9]/g, '-')}`;
 
@@ -753,7 +821,7 @@ apiRouter.post('/admin/curriculum/import', (req: Request, res: Response) => {
 });
 
 // POST /api/admin/curriculum/validate — Validate curriculum integrity
-apiRouter.post('/admin/curriculum/validate', (_req: Request, res: Response) => {
+apiRouter.post('/admin/curriculum/validate', adminAuthMiddleware, (_req: Request, res: Response) => {
   const allChapters = getAllCurriculumChapters();
   const verifiedCount = allChapters.filter((c) => c.verificationStatus === 'verified').length;
   const missingTopicsCount = allChapters.filter((c) => c.keyTopics.length === 0).length;
@@ -768,7 +836,7 @@ apiRouter.post('/admin/curriculum/validate', (_req: Request, res: Response) => {
 });
 
 // GET /api/admin/notes/coverage — System-wide coverage matrix
-apiRouter.get('/admin/notes/coverage', (_req: Request, res: Response) => {
+apiRouter.get('/admin/notes/coverage', adminAuthMiddleware, (_req: Request, res: Response) => {
   const allChapters = getAllCurriculumChapters();
   const coverageMatrix = allChapters.slice(0, 50).map((ch) => {
     const noteId = `note-${ch.chapterId}`;
@@ -807,7 +875,7 @@ apiRouter.get('/admin/notes/coverage', (_req: Request, res: Response) => {
 });
 
 // GET /api/admin/notes/jobs — List all background generation jobs
-apiRouter.get('/admin/notes/jobs', (_req: Request, res: Response) => {
+apiRouter.get('/admin/notes/jobs', adminAuthMiddleware, (_req: Request, res: Response) => {
   const jobs = Array.from(GENERATION_JOBS.values());
   res.json({ success: true, count: jobs.length, jobs });
 });

@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { NCERT_SYLLABUS, NCERTChapterItem } from '../src/data/ncertSyllabus';
 import { COMPREHENSIVE_CHAPTER_NOTES, getCuratedChapterNote } from '../src/data/curatedChapterNotes';
 import { generateHandwrittenNotes, parseHandwritingCommand } from './geminiService';
@@ -72,29 +74,78 @@ export const CURRICULA_REGISTRY: Record<string, CurriculumRecord> = {
 // In-Memory Generation Jobs Store
 export const GENERATION_JOBS: Map<string, GenerationJob> = new Map();
 
-// In-Memory Saved Notes Store
-export const PERSISTED_NOTES: Map<string, { note: NoteContentPayload; metadata: any }> = new Map();
+// Saved Notes & Progress disk storage paths
+const DATA_DIR = path.resolve(process.cwd(), 'data');
+const PERSISTED_NOTES_FILE = path.join(DATA_DIR, 'persisted_notes.json');
+const STUDENT_PROGRESS_FILE = path.join(DATA_DIR, 'student_progress.json');
 
-// In-Memory Student Progress Store (key: `${userId}:${notesId}`)
+// Persistent Stores
+export const PERSISTED_NOTES: Map<string, { note: NoteContentPayload; metadata: any }> = new Map();
 export const STUDENT_PROGRESS: Map<string, StudentProgressRecord> = new Map();
 
-// Initialize Persisted Notes from curated repository
+// Load disk stores on boot
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+
+  if (fs.existsSync(PERSISTED_NOTES_FILE)) {
+    const raw = fs.readFileSync(PERSISTED_NOTES_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    for (const [k, v] of Object.entries(parsed)) {
+      PERSISTED_NOTES.set(k, v as any);
+    }
+  }
+
+  if (fs.existsSync(STUDENT_PROGRESS_FILE)) {
+    const raw = fs.readFileSync(STUDENT_PROGRESS_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    for (const [k, v] of Object.entries(parsed)) {
+      STUDENT_PROGRESS.set(k, v as any);
+    }
+  }
+} catch (err) {
+  console.warn('[Curriculum Service] Notice during disk storage init:', err);
+}
+
+// Function to save stores to disk safely
+export function savePersistedNotesToDisk() {
+  try {
+    const obj = Object.fromEntries(PERSISTED_NOTES.entries());
+    fs.writeFileSync(PERSISTED_NOTES_FILE, JSON.stringify(obj, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('[Curriculum Service] Error saving notes to disk:', err);
+  }
+}
+
+export function saveStudentProgressToDisk() {
+  try {
+    const obj = Object.fromEntries(STUDENT_PROGRESS.entries());
+    fs.writeFileSync(STUDENT_PROGRESS_FILE, JSON.stringify(obj, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('[Curriculum Service] Error saving progress to disk:', err);
+  }
+}
+
+// Initialize Persisted Notes from curated repository if empty
 for (const [key, note] of Object.entries(COMPREHENSIVE_CHAPTER_NOTES)) {
   const noteId = `note-${key.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-  PERSISTED_NOTES.set(noteId, {
-    note,
-    metadata: {
-      noteId,
-      curriculumId: 'cbse-ncert-2026-27',
-      classGrade: note.classGrade,
-      subject: note.subject,
-      chapter: note.chapter,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      revision: 1,
-      isVerified: true,
-    },
-  });
+  if (!PERSISTED_NOTES.has(noteId)) {
+    PERSISTED_NOTES.set(noteId, {
+      note,
+      metadata: {
+        noteId,
+        curriculumId: 'cbse-ncert-2026-27',
+        classGrade: note.classGrade,
+        subject: note.subject,
+        chapter: note.chapter,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        revision: 1,
+        isVerified: true,
+      },
+    });
+  }
 }
 
 /**

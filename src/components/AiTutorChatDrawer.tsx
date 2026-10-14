@@ -142,9 +142,8 @@ export const AiTutorChatDrawer: React.FC<AiTutorChatDrawerProps> = ({
       try {
         speechRecognitionRef.current.lang = selectedLanguage === 'hindi' ? 'hi-IN' : 'en-IN';
         speechRecognitionRef.current.start();
-        setIsListening(true);
-      } catch (err) {
-        console.warn('Speech recognition start issue:', err);
+      } catch (_) {
+        setIsListening(false);
       }
     }
   };

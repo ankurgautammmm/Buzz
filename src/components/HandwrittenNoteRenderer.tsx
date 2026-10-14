@@ -464,75 +464,6 @@ export const HandwrittenNoteRenderer: React.FC<HandwrittenNoteRendererProps> = (
           </div>
         )}
 
-        {/* Yellow Highlighters: Important Concepts */}
-        {section.highlighterWords && section.highlighterWords.length > 0 && (
-          <div className="flex flex-wrap gap-2 my-2">
-            {section.highlighterWords.map((hw, hIdx) => (
-              <span
-                key={hIdx}
-                className="px-2.5 py-0.5 bg-yellow-300/80 border border-yellow-400 text-yellow-950 rounded-md font-bold text-sm shadow-2xs"
-              >
-                🟡 {hw}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Red Pen Warnings: Common Mistakes */}
-        {section.warningMistakes && section.warningMistakes.length > 0 && (
-          <div className={`p-3 border-2 rounded-xl my-2 text-sm font-sans flex items-start gap-2.5 shadow-2xs ${
-            isDark ? 'bg-rose-950/40 border-rose-500 text-rose-200' : 'bg-rose-50/90 border-rose-400 text-rose-950'
-          }`}>
-            <span className="text-rose-600 font-black text-lg select-none">⚠️</span>
-            <div>
-              <strong className="text-rose-600 block font-bold text-xs uppercase tracking-wider">
-                Red Pen Trap: Common Student Blunder in Board Exams
-              </strong>
-              {section.warningMistakes.map((w, wIdx) => (
-                <p key={wIdx} className="mt-0.5 font-medium">{w}</p>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Starred Exam Questions */}
-        {section.starredPoints && section.starredPoints.length > 0 && (
-          <div className={`p-3 border rounded-xl text-base font-semibold flex items-start gap-2 shadow-2xs my-2 ${
-            isDark ? 'bg-amber-950/30 border-amber-500 text-amber-200' : 'bg-amber-50/90 border-amber-300 text-amber-950'
-          }`}>
-            <span className="text-amber-500 font-bold text-xl select-none">★</span>
-            <div>
-              <span className={`text-xs font-mono font-bold uppercase block ${isDark ? 'text-amber-400' : 'text-amber-800'}`}>
-                100% Board Exam Target Point
-              </span>
-              <span>{section.starredPoints[0]}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Post-It Sticky Note Memory Hack with Washi Tape */}
-        {section.postItNote && (
-          <div className="my-3 flex justify-end">
-            <div className="w-full sm:w-72 bg-[#fef08a] border border-[#facc15] rounded-xl p-3.5 shadow-lg rotate-[-1.5deg] relative text-amber-950">
-              {/* Semi-transparent washi tape on top */}
-              <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-20 h-4 bg-amber-200/80 border border-amber-300/60 rounded-xs shadow-xs backdrop-blur-xs"></div>
-              <div className="text-xs font-sans font-bold text-amber-900 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                <Lightbulb className="w-3.5 h-3.5 text-amber-600" />
-                {section.postItNote.title || 'Topper Memory Hack'}
-              </div>
-              <p className="text-sm font-medium leading-snug">
-                {section.postItNote.text}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Margin Annotation */}
-        {section.marginAnnotation && (
-          <div className="text-right text-xs font-mono font-bold text-pink-700 italic">
-            {section.marginAnnotation}
-          </div>
-        )}
       </div>
     );
   };
@@ -992,7 +923,7 @@ export const HandwrittenNoteRenderer: React.FC<HandwrittenNoteRendererProps> = (
     </div>
   );
 
-  // Page 4: Exam Strategy, Traps & PYQs
+  // Page 4: Conceptual In-Depth Description Continuation
   const renderPageFour = () => (
     <div className="relative pl-0 md:pl-3 min-h-[750px] flex flex-col justify-between">
       <div className="absolute left-6 top-0 bottom-0 w-1 border-r-2 border-double border-red-400/60 pointer-events-none" />
@@ -1001,18 +932,29 @@ export const HandwrittenNoteRenderer: React.FC<HandwrittenNoteRendererProps> = (
         {renderRegisterHeader('04')}
 
         <div className="flex items-center justify-between pt-0.5 pb-0.5 text-xs sm:text-sm font-sans font-semibold text-slate-600">
-          <div className="font-bold text-purple-900">
-            Exam Strategy &bull; High-Yield Board PYQs
+          <div className="font-bold text-slate-900">
+            Topic Overview &bull; Detailed Conceptual Description
           </div>
-          <div className="font-mono text-purple-800 font-bold">5-Mark Long Answer Exemplars</div>
+          <div className="font-mono text-slate-800 font-bold">{activeNote.topic || activeNote.chapter}</div>
         </div>
 
-        {renderExamTipsSection()}
+        <div className="space-y-3.5 text-lg sm:text-xl leading-relaxed">
+          {rightPageSections.slice(1).length > 0 ? (
+            rightPageSections.slice(1).map((section, idx) => renderSectionBlock(section, leftPageSections.length + 1 + idx))
+          ) : (
+            <div className="p-4 border rounded-2xl bg-blue-50/70 border-blue-300/80 shadow-2xs space-y-2">
+              <h3 className="font-bold text-xl text-blue-950">Topic Mastery &bull; {activeNote.topic || activeNote.title}</h3>
+              <p className="text-lg font-medium text-slate-900 leading-relaxed">
+                {activeNote.sections[0]?.content || 'Comprehensive topic explanation and description covering core definitions, fundamental laws, and syllabus objectives.'}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="pl-9 pt-3 flex items-center justify-between text-xs text-slate-500 font-sans border-t border-slate-300 mt-4">
-        <span className="font-bold text-slate-700">Page 04 &bull; Exam Tips &amp; Revision</span>
-        <span className="font-mono">100% Free Open Education</span>
+        <span className="font-bold text-slate-700">Page 04 &bull; Topic Description</span>
+        <span className="font-mono">Buzzing Brain</span>
       </div>
     </div>
   );

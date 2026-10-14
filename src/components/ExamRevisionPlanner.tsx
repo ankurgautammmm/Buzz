@@ -25,6 +25,7 @@ interface ExamRevisionPlannerProps {
   user: UserProfile | null;
   activeClass: string;
   onGoToStudio?: (cmd: string) => void;
+  onGoToTests?: () => void;
   onRequireAuth: () => void;
 }
 
@@ -76,6 +77,7 @@ export const ExamRevisionPlanner: React.FC<ExamRevisionPlannerProps> = ({
   user,
   activeClass,
   onGoToStudio,
+  onGoToTests,
   onRequireAuth,
 }) => {
   // Target Exam Selection
@@ -423,16 +425,28 @@ export const ExamRevisionPlanner: React.FC<ExamRevisionPlannerProps> = ({
                   </div>
                 </div>
 
-                {onGoToStudio && (
-                  <button
-                    onClick={() => onGoToStudio(studyCommand)}
-                    className="px-3 py-1.5 rounded-lg bg-amber-400/10 hover:bg-amber-400 text-amber-300 hover:text-slate-950 font-semibold text-xs border border-amber-400/30 transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 active:scale-95"
-                    title="Generate authentic handwritten study notes"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    <span>Study Notes</span>
-                  </button>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {onGoToStudio && (
+                    <button
+                      onClick={() => onGoToStudio(studyCommand)}
+                      className="px-3 py-1.5 rounded-lg bg-amber-400/10 hover:bg-amber-400 text-amber-300 hover:text-slate-950 font-semibold text-xs border border-amber-400/30 transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 active:scale-95"
+                      title="Generate authentic handwritten study notes"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Study Notes</span>
+                    </button>
+                  )}
+                  {onGoToTests && (
+                    <button
+                      onClick={() => onGoToTests()}
+                      className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/10 transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 active:scale-95"
+                      title="Attempt NCERT chapter test"
+                    >
+                      <Target className="w-3 h-3 text-emerald-400" />
+                      <span>Take Quiz</span>
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}

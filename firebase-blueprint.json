@@ -262,6 +262,82 @@
         }
       },
       "required": ["userId"]
+    },
+    "TestAttempt": {
+      "title": "Chapter Test Attempt Record",
+      "description": "Student quiz or chapter test submission result and performance scorecard",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the student",
+          "maxLength": 128
+        },
+        "testId": {
+          "type": "string",
+          "description": "Identifier of the test taken",
+          "maxLength": 128
+        },
+        "testTitle": {
+          "type": "string",
+          "description": "Title of the test",
+          "maxLength": 200
+        },
+        "classGrade": {
+          "type": "string",
+          "description": "Class standard (e.g. Class 10)",
+          "maxLength": 50
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject name",
+          "maxLength": 100
+        },
+        "chapter": {
+          "type": "string",
+          "description": "Chapter title",
+          "maxLength": 150
+        },
+        "score": {
+          "type": "number",
+          "description": "Net score achieved"
+        },
+        "maxScore": {
+          "type": "number",
+          "description": "Maximum marks possible"
+        },
+        "percentage": {
+          "type": "number",
+          "description": "Percentage score achieved"
+        },
+        "correctCount": {
+          "type": "number",
+          "description": "Number of questions answered correctly"
+        },
+        "wrongCount": {
+          "type": "number",
+          "description": "Number of questions answered incorrectly"
+        },
+        "unattemptedCount": {
+          "type": "number",
+          "description": "Number of questions skipped"
+        },
+        "examPattern": {
+          "type": "string",
+          "description": "Examination pattern (cbse, neet, jee)",
+          "maxLength": 50
+        },
+        "percentile": {
+          "type": "string",
+          "description": "Estimated percentile bracket",
+          "maxLength": 50
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO timestamp of completion"
+        }
+      },
+      "required": ["userId", "testId", "testTitle", "score", "maxScore"]
     }
   },
   "firestore": {
@@ -280,6 +356,10 @@
     "/mistakes/{mistakeId}": {
       "schema": "Mistake",
       "description": "Student mistake notebook items for spaced repetition"
+    },
+    "/test_attempts/{attemptId}": {
+      "schema": "TestAttempt",
+      "description": "Student test attempts and examination scorecards"
     },
     "/admins/{adminId}": {
       "schema": "Admin",

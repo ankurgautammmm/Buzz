@@ -19,7 +19,9 @@ import {
   subscribeToStudyNotes, 
   submitComplaint, 
   updateComplaintStatus, 
-  subscribeToComplaints 
+  subscribeToComplaints,
+  getStoredGuestUser,
+  onGuestAuthStateChanged
 } from './services/firebase';
 import { logger } from './services/logger';
 import { Navbar, NavTab } from './components/Navbar';
@@ -82,6 +84,12 @@ export default function App() {
   // App Navigation & Selected Grade (Default to Class 11 or landing)
   const [currentTab, setCurrentTab] = useState<NavTab>('landing');
   const [activeClass, setActiveClass] = useState<string>('Class 11');
+  const [labsInitialSubTab, setLabsInitialSubTab] = useState<'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations'>('organs3d');
+
+  const handleGoToLabs = (subTab: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' = 'organs3d') => {
+    setLabsInitialSubTab(subTab);
+    setCurrentTab('labs');
+  };
 
   // Study Notes State
   const [notesList, setNotesList] = useState<StudyNote[]>([]);
@@ -119,11 +127,12 @@ export default function App() {
       }
     });
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+    const handleUserSync = async (user: FirebaseUser | null) => {
       if (!isMounted) return;
-      setFirebaseUser(user);
+      const effectiveUser = user || getStoredGuestUser();
+      setFirebaseUser(effectiveUser);
 
-      if (!user) {
+      if (!effectiveUser) {
         setUserProfile(null);
         setAuthStatus('UNAUTHENTICATED');
         return;
@@ -132,7 +141,7 @@ export default function App() {
       setAuthStatus('AUTHENTICATED_PROFILE_LOADING');
 
       try {
-        const profile = await syncUserProfile(user, activeClass);
+        const profile = await syncUserProfile(effectiveUser, activeClass);
         if (!isMounted) return;
         setUserProfile(profile);
         setAuthStatus('AUTHENTICATED_PROFILE_READY');
@@ -145,8 +154,8 @@ export default function App() {
           profile.mobileNumber && 
           profile.targetExam
         );
-        const isDismissed = sessionStorage.getItem(`bb_onboarding_dismissed_${user.uid}`);
-        if (!isComplete && !isDismissed && !user.isAnonymous) {
+        const isDismissed = sessionStorage.getItem(`bb_onboarding_dismissed_${effectiveUser.uid}`);
+        if (!isComplete && !isDismissed && !effectiveUser.isAnonymous) {
           setShowOnboarding(true);
         }
       } catch (err) {
@@ -154,14 +163,25 @@ export default function App() {
         if (!isMounted) return;
         setAuthStatus('AUTHENTICATED_PROFILE_ERROR');
         // Resilient fallback profile keeps student authenticated
-        const fallback = buildFallbackUserProfile(user, activeClass);
+        const fallback = buildFallbackUserProfile(effectiveUser, activeClass);
         setUserProfile(fallback);
+      }
+    };
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      await handleUserSync(user);
+    });
+
+    const unsubscribeGuest = onGuestAuthStateChanged((guestUser) => {
+      if (!auth.currentUser) {
+        handleUserSync(guestUser);
       }
     });
 
     return () => {
       isMounted = false;
       unsubscribeAuth();
+      unsubscribeGuest();
     };
   }, []);
 
@@ -602,6 +622,7 @@ export default function App() {
         onOpenChat={() => setShowTutorChat(true)}
         onOpenComplaint={() => setShowComplaintModal(true)}
         onOpenProfile={() => setShowOnboarding(true)}
+        onGoToLabs={handleGoToLabs}
       />
 
       {/* Main Container */}
@@ -696,7 +717,7 @@ export default function App() {
             onGoToCourses={() => setCurrentTab('courses')}
             onGoToVideos={() => setCurrentTab('videos')}
             onGoToScanner={() => setCurrentTab('scanner')}
-            onGoToLabs={() => setCurrentTab('labs')}
+            onGoToLabs={(subTab) => handleGoToLabs(subTab)}
             onGoToPlanner={() => setCurrentTab('planner')}
             onGoToCommunity={() => setCurrentTab('community')}
             onSignIn={handleSignIn}
@@ -1012,6 +1033,7 @@ export default function App() {
         {currentTab === 'labs' && (
           <InteractiveLabsAndMindMaps
             activeClass={activeClass}
+            initialSubTab={labsInitialSubTab}
           />
         )}
 
@@ -1030,6 +1052,7 @@ export default function App() {
                 setShowAuthWall(true);
               }
             }}
+            onGoToTests={() => setCurrentTab('tests')}
             onRequireAuth={() => {
               setAuthWallMessage("Please log in or sign up to personalize your exam revision schedule.");
               setShowAuthWall(true);
