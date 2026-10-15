@@ -1034,6 +1034,7 @@ export default function App() {
           <InteractiveLabsAndMindMaps
             activeClass={activeClass}
             initialSubTab={labsInitialSubTab}
+            userProfile={userProfile}
           />
         )}
 

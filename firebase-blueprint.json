@@ -338,6 +338,108 @@
         }
       },
       "required": ["userId", "testId", "testTitle", "score", "maxScore"]
+    },
+    "ExperimentJournal": {
+      "title": "Laboratory Experiment Journal Record",
+      "description": "Student experimental observations, virtual tool measurements, unit conversions, and lab reports",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the student",
+          "maxLength": 128
+        },
+        "experimentNo": {
+          "type": "string",
+          "description": "Laboratory experiment number (e.g. EXP-01)",
+          "maxLength": 50
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the laboratory experiment",
+          "maxLength": 200
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of experiment",
+          "maxLength": 50
+        },
+        "classGrade": {
+          "type": "string",
+          "description": "Class standard (e.g. Class 10)",
+          "maxLength": 50
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject name",
+          "maxLength": 100
+        },
+        "aim": {
+          "type": "string",
+          "description": "Aim / objective of the experiment",
+          "maxLength": 2000
+        },
+        "apparatus": {
+          "type": "string",
+          "description": "List of apparatus and reagents used",
+          "maxLength": 2000
+        },
+        "theory": {
+          "type": "string",
+          "description": "Scientific theory and working principle",
+          "maxLength": 5000
+        },
+        "formulae": {
+          "type": "string",
+          "description": "Key chemical or physical formulae",
+          "maxLength": 1000
+        },
+        "activeToolUsed": {
+          "type": "string",
+          "description": "Virtual tool source (e.g. pH Meter, Microscope)",
+          "maxLength": 100
+        },
+        "observationsJson": {
+          "type": "string",
+          "description": "JSON stringified observations and measurement table data",
+          "maxLength": 50000
+        },
+        "calculations": {
+          "type": "string",
+          "description": "Calculations and data processing",
+          "maxLength": 5000
+        },
+        "errorPercentage": {
+          "type": "number",
+          "description": "Calculated experimental error percentage"
+        },
+        "conclusion": {
+          "type": "string",
+          "description": "Inference and conclusion drawn",
+          "maxLength": 3000
+        },
+        "precautions": {
+          "type": "string",
+          "description": "Laboratory precautions observed",
+          "maxLength": 3000
+        },
+        "studentName": {
+          "type": "string",
+          "description": "Name of student scholar",
+          "maxLength": 100
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO creation timestamp",
+          "maxLength": 50
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO update timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["userId", "title", "aim"]
     }
   },
   "firestore": {
@@ -360,6 +462,10 @@
     "/test_attempts/{attemptId}": {
       "schema": "TestAttempt",
       "description": "Student test attempts and examination scorecards"
+    },
+    "/journals/{journalId}": {
+      "schema": "ExperimentJournal",
+      "description": "Student laboratory experiment journal records and PDF reports"
     },
     "/admins/{adminId}": {
       "schema": "Admin",

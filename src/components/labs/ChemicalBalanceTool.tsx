@@ -10,8 +10,23 @@ import {
   Info, 
   Check, 
   ChevronRight,
-  Maximize2
+  Maximize2,
+  BookOpen
 } from 'lucide-react';
+
+export interface ChemicalBalanceReading {
+  reagentName: string;
+  formula: string;
+  massGrams: number;
+  tareVessel: string;
+  targetMolarity: number;
+  timestamp: string;
+}
+
+interface ChemicalBalanceProps {
+  onLogToJournal?: (reading: ChemicalBalanceReading) => void;
+  onOpenJournal?: () => void;
+}
 
 interface TareVessel {
   id: string;
@@ -123,7 +138,7 @@ const CHEMICAL_REAGENTS: ChemicalReagent[] = [
   }
 ];
 
-export const ChemicalBalanceTool: React.FC = () => {
+export const ChemicalBalanceTool: React.FC<ChemicalBalanceProps> = ({ onLogToJournal, onOpenJournal }) => {
   // Instrument Configuration
   const [draftShieldClosed, setDraftShieldClosed] = useState<boolean>(true);
   const [leastCountMode, setLeastCountMode] = useState<'analytical' | 'precision'>('analytical'); // 4 decimals vs 2 decimals
@@ -136,6 +151,8 @@ export const ChemicalBalanceTool: React.FC = () => {
   const [taredGrossG, setTaredGrossG] = useState<number>(0.0);
   const [hasCalibWeight, setHasCalibWeight] = useState<boolean>(false);
   const [targetFlaskVolumeMl, setTargetFlaskVolumeMl] = useState<number>(250); // 100, 250, 500, 1000 mL
+  const [journalLoggedNotice, setJournalLoggedNotice] = useState<string | null>(null);
+  const [isPanHovered, setIsPanHovered] = useState<boolean>(false);
 
   // Air turbulence noise simulation when draft shield is open
   const [airTurbulence, setAirTurbulence] = useState<number>(0);
@@ -226,6 +243,22 @@ export const ChemicalBalanceTool: React.FC = () => {
     setTargetFlaskVolumeMl(250);
   };
 
+  const handleLogToJournal = () => {
+    const reading: ChemicalBalanceReading = {
+      reagentName: activeReagent.name,
+      formula: activeReagent.formula,
+      massGrams: parseFloat(reagentMassG.toFixed(4)),
+      tareVessel: activeVessel.name,
+      targetMolarity: activeReagent.targetMolarity,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    };
+    if (onLogToJournal) {
+      onLogToJournal(reading);
+    }
+    setJournalLoggedNotice(`Logged ${activeReagent.name} (${reagentMassG.toFixed(4)} g) to Experiment Journal`);
+    setTimeout(() => setJournalLoggedNotice(null), 4000);
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
@@ -249,7 +282,7 @@ export const ChemicalBalanceTool: React.FC = () => {
         </div>
 
         {/* Quick Mode Pill Selectors */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setLeastCountMode(leastCountMode === 'analytical' ? 'precision' : 'analytical')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
@@ -272,6 +305,15 @@ export const ChemicalBalanceTool: React.FC = () => {
             <Shield className="w-3.5 h-3.5" />
             <span>{draftShieldClosed ? 'Draft Shield: Closed' : 'Draft Shield: OPEN'}</span>
           </button>
+
+          <button
+            onClick={handleLogToJournal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+            title="Append current gravimetric weighing data to Experiment Journal"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Record in Journal</span>
+          </button>
         </div>
       </div>
 
@@ -279,6 +321,24 @@ export const ChemicalBalanceTool: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column (8 cols): Digital Balance Physical Chamber & Glowing HUD */}
         <div className="lg:col-span-8 rounded-3xl bg-slate-950 border border-white/10 p-6 space-y-6 shadow-2xl relative overflow-hidden">
+          {/* Journal Logged Banner Notification */}
+          {journalLoggedNotice && (
+            <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-xs flex items-center justify-between animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{journalLoggedNotice}</span>
+              </div>
+              {onOpenJournal && (
+                <button
+                  onClick={onOpenJournal}
+                  className="text-[11px] font-mono text-cyan-300 hover:text-white underline font-bold cursor-pointer"
+                >
+                  View in Journal →
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Draft Shield Indicator Banner */}
           {!draftShieldClosed && (
             <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300 shadow-sm animate-in fade-in">

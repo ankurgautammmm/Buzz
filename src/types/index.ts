@@ -338,3 +338,41 @@ export interface ChatMessage {
   text: string;
   timestamp: string;
 }
+
+// ==========================================
+// Experiment Journal & Lab Report Types
+// ==========================================
+
+export interface JournalObservationRow {
+  id: string;
+  parameter: string;
+  metricValue: string;
+  metricUnit: string;
+  imperialValue: string;
+  imperialUnit: string;
+  notes?: string;
+}
+
+export interface ExperimentJournalEntry {
+  id: string;
+  userId?: string;
+  experimentNo: string;
+  title: string;
+  date: string;
+  classGrade: string;
+  subject: string;
+  aim: string;
+  apparatus: string;
+  theory: string;
+  formulae: string;
+  activeToolUsed?: string;
+  observations: JournalObservationRow[];
+  calculations: string;
+  errorPercentage?: number;
+  conclusion: string;
+  precautions: string;
+  studentName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+

@@ -33,7 +33,7 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { logger } from './logger';
-import { StudyNote, UserProfile, ComplaintTicket, MistakeItem, TestAttemptRecord } from '../types';
+import { StudyNote, UserProfile, ComplaintTicket, MistakeItem, TestAttemptRecord, ExperimentJournalEntry } from '../types';
 
 export enum OperationType {
   CREATE = 'create',
@@ -926,8 +926,170 @@ export function subscribeToStudentTestAttempts(
       }
     },
     (error) => {
-      logger.warn('Tests', `Test attempts subscription notice: ${error.message}`);
+      logger.info('TestAttempts', '[FIRESTORE] Query error, using cache fallback', { error: error?.message });
+      callback(getLocalTestAttempts(userId));
     }
   );
 }
+
+// ============================================================================
+// Experiment Journal Persistence (Firestore + LocalStorage hybrid)
+// ============================================================================
+
+export async function saveExperimentJournal(
+  journal: Omit<ExperimentJournalEntry, 'id' | 'createdAt' | 'updatedAt'>,
+  existingId?: string
+): Promise<string> {
+  const journalId = existingId || `jrnl_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const now = new Date().toISOString();
+  const fullJournal: ExperimentJournalEntry = {
+    ...journal,
+    id: journalId,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const localKey = `bb_journals_${journal.userId || 'guest'}`;
+  try {
+    const raw = localStorage.getItem(localKey);
+    let list: ExperimentJournalEntry[] = raw ? JSON.parse(raw) : [];
+    const existingIdx = list.findIndex(j => j.id === journalId);
+    if (existingIdx >= 0) {
+      list[existingIdx] = fullJournal;
+    } else {
+      list.unshift(fullJournal);
+    }
+    localStorage.setItem(localKey, JSON.stringify(list.slice(0, 100)));
+  } catch (_) {}
+
+  // If authenticated with Firebase, write to Firestore
+  if (auth.currentUser && !auth.currentUser.uid.startsWith('guest_')) {
+    try {
+      const journalDoc = doc(db, 'journals', journalId);
+      const firestorePayload = {
+        userId: journal.userId || auth.currentUser.uid,
+        experimentNo: journal.experimentNo || 'EXP-01',
+        title: journal.title,
+        date: journal.date,
+        classGrade: journal.classGrade,
+        subject: journal.subject,
+        aim: journal.aim,
+        apparatus: journal.apparatus,
+        theory: journal.theory,
+        formulae: journal.formulae,
+        activeToolUsed: journal.activeToolUsed || '',
+        observationsJson: JSON.stringify(journal.observations || []),
+        calculations: journal.calculations,
+        errorPercentage: journal.errorPercentage || 0,
+        conclusion: journal.conclusion,
+        precautions: journal.precautions,
+        studentName: journal.studentName,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await setDoc(journalDoc, cleanFirestoreData(firestorePayload), { merge: true });
+      logger.info('Journals', `[FIRESTORE] Saved journal ${journalId}`);
+    } catch (err) {
+      logger.warn('Journals', '[FIRESTORE] Saved journal to local storage fallback:', err);
+    }
+  }
+  return journalId;
+}
+
+export function getLocalJournals(userId?: string): ExperimentJournalEntry[] {
+  try {
+    const localKey = `bb_journals_${userId || 'guest'}`;
+    const raw = localStorage.getItem(localKey);
+    return raw ? JSON.parse(raw) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+export async function deleteExperimentJournal(journalId: string, userId?: string): Promise<void> {
+  const localKey = `bb_journals_${userId || 'guest'}`;
+  try {
+    const raw = localStorage.getItem(localKey);
+    if (raw) {
+      const list: ExperimentJournalEntry[] = JSON.parse(raw);
+      const filtered = list.filter(j => j.id !== journalId);
+      localStorage.setItem(localKey, JSON.stringify(filtered));
+    }
+  } catch (_) {}
+
+  if (auth.currentUser && !auth.currentUser.uid.startsWith('guest_')) {
+    try {
+      const journalDoc = doc(db, 'journals', journalId);
+      await deleteDoc(journalDoc);
+    } catch (_) {}
+  }
+}
+
+export function subscribeToExperimentJournals(
+  userId: string,
+  callback: (journals: ExperimentJournalEntry[]) => void
+): Unsubscribe {
+  // Always immediately provide local cache
+  callback(getLocalJournals(userId));
+
+  if (!auth.currentUser || userId.startsWith('guest_')) {
+    return () => {};
+  }
+
+  try {
+    const journalsCol = collection(db, 'journals');
+    const q = query(journalsCol, where('userId', '==', userId), limit(50));
+
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const list: ExperimentJournalEntry[] = [];
+        snapshot.forEach((d) => {
+          const data = d.data();
+          let parsedObs = [];
+          try {
+            if (data.observationsJson) parsedObs = JSON.parse(data.observationsJson);
+          } catch (_) {}
+          list.push({
+            id: d.id,
+            userId: data.userId,
+            experimentNo: data.experimentNo || 'EXP-01',
+            title: data.title || '',
+            date: data.date || '',
+            classGrade: data.classGrade || 'Class 10',
+            subject: data.subject || 'Science',
+            aim: data.aim || '',
+            apparatus: data.apparatus || '',
+            theory: data.theory || '',
+            formulae: data.formulae || '',
+            activeToolUsed: data.activeToolUsed || '',
+            observations: parsedObs,
+            calculations: data.calculations || '',
+            errorPercentage: data.errorPercentage || 0,
+            conclusion: data.conclusion || '',
+            precautions: data.precautions || '',
+            studentName: data.studentName || 'Student Scholar',
+            createdAt: data.createdAt || new Date().toISOString(),
+            updatedAt: data.updatedAt || new Date().toISOString(),
+          });
+        });
+        if (list.length > 0) {
+          list.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+          try {
+            localStorage.setItem(`bb_journals_${userId}`, JSON.stringify(list));
+          } catch (_) {}
+          callback(list);
+        }
+      },
+      () => {
+        // Silent fallback to local storage
+        callback(getLocalJournals(userId));
+      }
+    );
+  } catch (_) {
+    callback(getLocalJournals(userId));
+    return () => {};
+  }
+}
+
 

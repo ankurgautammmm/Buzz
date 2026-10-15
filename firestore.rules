@@ -124,6 +124,28 @@ service cloud.firestore {
         (!('timestamp' in data) || (data.timestamp is string && data.timestamp.size() <= 50));
     }
 
+    function isValidJournal(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+        data.title is string && data.title.size() <= 200 &&
+        data.aim is string && data.aim.size() <= 2000 &&
+        (!('experimentNo' in data) || (data.experimentNo is string && data.experimentNo.size() <= 50)) &&
+        (!('date' in data) || (data.date is string && data.date.size() <= 50)) &&
+        (!('classGrade' in data) || (data.classGrade is string && data.classGrade.size() <= 50)) &&
+        (!('subject' in data) || (data.subject is string && data.subject.size() <= 100)) &&
+        (!('apparatus' in data) || (data.apparatus is string && data.apparatus.size() <= 2000)) &&
+        (!('theory' in data) || (data.theory is string && data.theory.size() <= 5000)) &&
+        (!('formulae' in data) || (data.formulae is string && data.formulae.size() <= 1000)) &&
+        (!('activeToolUsed' in data) || (data.activeToolUsed is string && data.activeToolUsed.size() <= 100)) &&
+        (!('observationsJson' in data) || (data.observationsJson is string && data.observationsJson.size() <= 50000)) &&
+        (!('calculations' in data) || (data.calculations is string && data.calculations.size() <= 5000)) &&
+        (!('errorPercentage' in data) || data.errorPercentage is number) &&
+        (!('conclusion' in data) || (data.conclusion is string && data.conclusion.size() <= 3000)) &&
+        (!('precautions' in data) || (data.precautions is string && data.precautions.size() <= 3000)) &&
+        (!('studentName' in data) || (data.studentName is string && data.studentName.size() <= 100)) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
     // 1. User Profiles
     match /users/{userId} {
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
@@ -250,7 +272,38 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // 6. Admin Roster
+    // 6. Experiment Journals & Lab Reports
+    match /journals/{journalId} {
+      allow get: if isSignedIn() && (
+        existing().userId == request.auth.uid ||
+        isAdmin()
+      );
+
+      allow list: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+
+      allow create: if isSignedIn() &&
+        isValidId(journalId) &&
+        incoming().userId == request.auth.uid &&
+        isValidJournal(incoming());
+
+      allow update: if isSignedIn() &&
+        isValidId(journalId) &&
+        isValidJournal(incoming()) && (
+          (existing().userId == request.auth.uid && incoming().userId == existing().userId) ||
+          isAdmin()
+        );
+
+      allow delete: if isSignedIn() &&
+        isValidId(journalId) && (
+          existing().userId == request.auth.uid ||
+          isAdmin()
+        );
+    }
+
+    // 7. Admin Roster
     match /admins/{adminId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();

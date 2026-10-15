@@ -34,7 +34,8 @@ import {
   Grid,
   Check,
   RefreshCw,
-  FlaskConical
+  FlaskConical,
+  BookOpen
 } from 'lucide-react';
 import { 
   MIND_MAPS_LIBRARY, 
@@ -50,15 +51,29 @@ import {
 import { ChemicalBalanceTool } from './labs/ChemicalBalanceTool';
 import { DigitalPhMeterTool } from './labs/DigitalPhMeterTool';
 import { DigitalMicroscopeTool } from './labs/DigitalMicroscopeTool';
+import { ExperimentJournal } from './labs/ExperimentJournal';
+import { UserProfile } from '../types';
 
 interface InteractiveLabsProps {
   activeClass: string;
-  initialSubTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations';
+  initialSubTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal';
+  userProfile?: UserProfile | null;
 }
 
-export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({ activeClass, initialSubTab = 'organs3d' }) => {
-  // Main Navigation Modes (Mind Maps, 3D Organs, Calibrated Virtual Tools, Simulations)
-  const [activeMainTab, setActiveMainTab] = useState<'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations'>(initialSubTab);
+export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({ 
+  activeClass, 
+  initialSubTab = 'organs3d',
+  userProfile 
+}) => {
+  // Main Navigation Modes (Mind Maps, 3D Organs, Calibrated Virtual Tools, Simulations, Experiment Journal)
+  const [activeMainTab, setActiveMainTab] = useState<'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal'>(initialSubTab);
+
+  // Live tool readings persisted for quick one-click import into Experiment Journal
+  const [liveToolReadings, setLiveToolReadings] = useState<{
+    phMeter?: { solutionName: string; ph: number; tempC: number; emfMv: string; hConc: string; timestamp: string };
+    microscope?: { specimenName: string; tissueType: string; magnification: number; cellSizeUm: number; objective: string; timestamp: string };
+    balance?: { reagentName: string; formula: string; massGrams: number; tareVessel: string; targetMolarity: number; timestamp: string };
+  }>({});
 
   useEffect(() => {
     if (initialSubTab) {
@@ -407,7 +422,24 @@ export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({ act
             }`}
           >
             <Activity className="w-4 h-4" />
-            <span>Physics & Chem Labs</span>
+            <span>Physics &amp; Chem Labs</span>
+          </button>
+
+          <button
+            onClick={() => setActiveMainTab('journal')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeMainTab === 'journal' 
+                ? 'bg-emerald-400 text-slate-950 shadow-md scale-[1.02]' 
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Experiment Journal</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono uppercase tracking-wider font-bold ${
+              activeMainTab === 'journal' ? 'bg-slate-950/20 text-slate-950' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+            }`}>
+              PDF Report
+            </span>
           </button>
         </div>
       </div>
@@ -1284,17 +1316,32 @@ export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({ act
 
           {/* TOOL 1: CALIBRATED DIGITAL OPTICAL MICROSCOPE */}
           {selectedToolId === 'tool-microscope' && (
-            <DigitalMicroscopeTool />
+            <DigitalMicroscopeTool
+              onLogToJournal={(reading) => {
+                setLiveToolReadings(prev => ({ ...prev, microscope: reading }));
+              }}
+              onOpenJournal={() => setActiveMainTab('journal')}
+            />
           )}
 
           {/* TOOL 2: PRECISION DIGITAL ANALYTICAL CHEMICAL BALANCE */}
           {selectedToolId === 'tool-chemical-balance' && (
-            <ChemicalBalanceTool />
+            <ChemicalBalanceTool
+              onLogToJournal={(reading) => {
+                setLiveToolReadings(prev => ({ ...prev, balance: reading }));
+              }}
+              onOpenJournal={() => setActiveMainTab('journal')}
+            />
           )}
 
           {/* TOOL 3: CALIBRATED DIGITAL BENCHTOP PH METER */}
           {selectedToolId === 'tool-ph-meter' && (
-            <DigitalPhMeterTool />
+            <DigitalPhMeterTool
+              onLogToJournal={(reading) => {
+                setLiveToolReadings(prev => ({ ...prev, phMeter: reading }));
+              }}
+              onOpenJournal={() => setActiveMainTab('journal')}
+            />
           )}
 
           {/* TOOL 2: ACID-BASE TITRATION & PH CURVE */}
@@ -1692,6 +1739,21 @@ export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({ act
             </div>
           </div>
         </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 5. EXPERIMENT JOURNAL & OFFICIAL PDF LAB REPORT VIEW */}
+      {/* ========================================================= */}
+      {activeMainTab === 'journal' && (
+        <ExperimentJournal
+          activeClass={activeClass}
+          userProfile={userProfile}
+          liveToolReadings={liveToolReadings}
+          onSwitchToTool={(toolId) => {
+            setSelectedToolId(toolId);
+            setActiveMainTab('virtual_tools');
+          }}
+        />
       )}
     </div>
   );

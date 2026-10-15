@@ -10,7 +10,9 @@ import {
   Info, 
   Check, 
   Droplets,
-  Sparkles
+  Sparkles,
+  BookOpen,
+  ArrowRight
 } from 'lucide-react';
 
 interface PhSolution {
@@ -197,7 +199,19 @@ const PH_SOLUTIONS_LIBRARY: PhSolution[] = [
   }
 ];
 
-export const DigitalPhMeterTool: React.FC = () => {
+interface DigitalPhMeterProps {
+  onLogToJournal?: (reading: {
+    solutionName: string;
+    ph: number;
+    tempC: number;
+    emfMv: string;
+    hConc: string;
+    timestamp: string;
+  }) => void;
+  onOpenJournal?: () => void;
+}
+
+export const DigitalPhMeterTool: React.FC<DigitalPhMeterProps> = ({ onLogToJournal, onOpenJournal }) => {
   // Meter states
   const [selectedSolutionId, setSelectedSolutionId] = useState<string>('water');
   const [electrodeState, setElectrodeState] = useState<'submerged' | 'air'>('submerged');
@@ -206,6 +220,8 @@ export const DigitalPhMeterTool: React.FC = () => {
   const [calibStep, setCalibStep] = useState<number>(3); // 3 = fully calibrated with 4, 7, 10
   const [slopeEfficiency, setSlopeEfficiency] = useState<number>(98.6); // percentage (ideal 100%)
   const [rinseMessage, setRinseMessage] = useState<string | null>(null);
+  const [journalLoggedNotice, setJournalLoggedNotice] = useState<string | null>(null);
+  const [isGaugeHovered, setIsGaugeHovered] = useState<boolean>(false);
 
   // Custom Solution Simulator States
   const [isCustomMode, setIsCustomMode] = useState<boolean>(false);
@@ -302,6 +318,30 @@ export const DigitalPhMeterTool: React.FC = () => {
     }, 1000);
   };
 
+  // Rotating Galvanometer Needle Angle:
+  // -65 deg (Strong Acid pH 0) -> 0 deg (Neutral pH 7) -> +65 deg (Strong Base pH 14)
+  const needleAngle = useMemo(() => {
+    if (electrodeState === 'air') return 0;
+    const clampedPh = Math.max(0, Math.min(14, calculatedPh));
+    return Number((((clampedPh - 7) / 7) * 65).toFixed(1));
+  }, [calculatedPh, electrodeState]);
+
+  const handleSendToJournal = () => {
+    const reading = {
+      solutionName: isCustomMode ? `Custom ${customType.replace('_', ' ')} (${customConcM} M)` : activeSolution.name,
+      ph: calculatedPh,
+      tempC: temperatureC,
+      emfMv: cellPotentialMv,
+      hConc: currentHConc,
+      timestamp: new Date().toLocaleTimeString(),
+    };
+    if (onLogToJournal) {
+      onLogToJournal(reading);
+    }
+    setJournalLoggedNotice(`Logged pH ${calculatedPh.toFixed(2)} to Experiment Journal`);
+    setTimeout(() => setJournalLoggedNotice(null), 3000);
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
@@ -325,7 +365,7 @@ export const DigitalPhMeterTool: React.FC = () => {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleRunCalibrationWizard}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all cursor-pointer"
@@ -341,6 +381,15 @@ export const DigitalPhMeterTool: React.FC = () => {
             <Droplets className="w-3.5 h-3.5 text-cyan-400" />
             <span>Rinse Probe (DI Water)</span>
           </button>
+
+          <button
+            onClick={handleSendToJournal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+            title="Append current pH and EMF potentiometric readings to Experiment Journal"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Record in Journal</span>
+          </button>
         </div>
       </div>
 
@@ -353,6 +402,24 @@ export const DigitalPhMeterTool: React.FC = () => {
             <div className="p-3 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-200 text-xs flex items-center gap-2 animate-in fade-in">
               <Droplets className="w-4 h-4 text-cyan-400 shrink-0" />
               <span>{rinseMessage}</span>
+            </div>
+          )}
+
+          {/* Journal Logged Banner Notification */}
+          {journalLoggedNotice && (
+            <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-xs flex items-center justify-between animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{journalLoggedNotice}</span>
+              </div>
+              {onOpenJournal && (
+                <button
+                  onClick={onOpenJournal}
+                  className="text-[11px] font-mono text-cyan-300 hover:text-white underline font-bold cursor-pointer"
+                >
+                  View in Journal →
+                </button>
+              )}
             </div>
           )}
 
@@ -451,6 +518,94 @@ export const DigitalPhMeterTool: React.FC = () => {
                 </div>
               </div>
 
+              {/* ANALOG ROTATING NEEDLE POTENTIOMETER GAUGE */}
+              <div 
+                onMouseEnter={() => setIsGaugeHovered(true)}
+                onMouseLeave={() => setIsGaugeHovered(false)}
+                className="relative p-3.5 rounded-2xl bg-[#030712] border border-cyan-500/30 hover:border-cyan-400/70 transition-all duration-300 overflow-hidden group/gauge shadow-inner cursor-pointer"
+              >
+                {/* Glass Dial Anti-Glare Reflection Sweep */}
+                <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/5 to-cyan-400/10 opacity-30 group-hover/gauge:opacity-75 transition-opacity duration-300" />
+
+                <div className="flex items-center justify-between text-[9px] font-mono font-bold tracking-wider mb-0.5">
+                  <span className="text-rose-400">0 ACID</span>
+                  <span className="text-emerald-400">7 NEUTRAL</span>
+                  <span className="text-purple-400">14 BASE</span>
+                </div>
+
+                {/* Arc Gauge with Rotating Needle */}
+                <div className="relative h-20 w-full flex items-end justify-center overflow-visible">
+                  <svg viewBox="0 0 200 95" className="w-48 h-20 overflow-visible">
+                    <defs>
+                      <linearGradient id="phNeedleGaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#ef4444" />
+                        <stop offset="35%" stopColor="#f59e0b" />
+                        <stop offset="50%" stopColor="#10b981" />
+                        <stop offset="70%" stopColor="#06b6d4" />
+                        <stop offset="100%" stopColor="#a855f7" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M 25 85 A 75 75 0 0 1 175 85"
+                      fill="none"
+                      stroke="#1e293b"
+                      strokeWidth="10"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M 25 85 A 75 75 0 0 1 175 85"
+                      fill="none"
+                      stroke="url(#phNeedleGaugeGradient)"
+                      strokeWidth="6"
+                      strokeLinecap="round"
+                      className="opacity-90"
+                    />
+                    {[0, 2, 4, 6, 7, 8, 10, 12, 14].map(val => {
+                      const rad = (((val - 7) / 7) * 65) * (Math.PI / 180);
+                      const x1 = 100 + 66 * Math.sin(rad);
+                      const y1 = 85 - 66 * Math.cos(rad);
+                      const x2 = 100 + 76 * Math.sin(rad);
+                      const y2 = 85 - 76 * Math.cos(rad);
+                      return (
+                        <line
+                          key={val}
+                          x1={x1}
+                          y1={y1}
+                          x2={x2}
+                          y2={y2}
+                          stroke={val === 7 ? '#10b981' : '#94a3b8'}
+                          strokeWidth={val === 7 ? '2' : '1'}
+                        />
+                      );
+                    })}
+                  </svg>
+
+                  {/* MECHANICAL ROTATING NEEDLE WITH DYNAMIC HOVER SENSITIVITY */}
+                  <div 
+                    className="absolute bottom-0 w-1 h-18 bg-gradient-to-t from-cyan-400 via-white to-rose-400 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.9)] origin-bottom transition-transform duration-500 ease-out will-change-transform"
+                    style={{
+                      transform: `rotate(${needleAngle + (isGaugeHovered ? 1.5 : 0)}deg)`,
+                      transformOrigin: '50% 100%',
+                      boxShadow: isGaugeHovered ? '0 0 16px rgba(6,182,212,1), 0 0 6px #fff' : '0 0 10px rgba(6,182,212,0.9)'
+                    }}
+                  >
+                    <div className="w-2.5 h-2.5 bg-rose-500 rounded-full absolute -top-1 -left-[3px] shadow-[0_0_8px_#f43f5e] transition-transform duration-300 group-hover/gauge:scale-125" />
+                  </div>
+
+                  {/* Center Pivot Hub */}
+                  <div className="absolute -bottom-1 w-5 h-5 rounded-full bg-slate-800 border-2 border-cyan-400 shadow-md flex items-center justify-center z-10">
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-pulse" />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-1">
+                  <span>Galvanometric Dial:</span>
+                  <span className={`font-bold transition-colors ${isGaugeHovered ? 'text-emerald-300' : 'text-cyan-300'}`}>
+                    {needleAngle > 0 ? `+${needleAngle}°` : `${needleAngle}°`} {isGaugeHovered && '⚡ Active Flux'}
+                  </span>
+                </div>
+              </div>
+
               {/* Electrode Health & Slope */}
               <div className="p-3 rounded-2xl bg-slate-950/80 border border-white/10 space-y-1.5 text-xs font-mono">
                 <div className="flex items-center justify-between text-slate-400">
@@ -480,6 +635,30 @@ export const DigitalPhMeterTool: React.FC = () => {
               >
                 {electrodeState === 'submerged' ? 'Raise Electrode Arm (To Rinse)' : 'Submerge Electrode in Solution'}
               </button>
+
+              {/* Send Reading to Experiment Journal */}
+              <div className="pt-1 space-y-1.5">
+                <button
+                  onClick={handleSendToJournal}
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-95 text-slate-950 text-xs font-black transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-slate-950" />
+                  <span>Log Reading to Experiment Journal</span>
+                </button>
+                {journalLoggedNotice && (
+                  <div className="text-center text-[10px] font-mono text-emerald-400 font-bold animate-in fade-in">
+                    ✓ {journalLoggedNotice}
+                  </div>
+                )}
+                {onOpenJournal && (
+                  <button
+                    onClick={onOpenJournal}
+                    className="w-full text-center text-[11px] text-cyan-400 hover:text-cyan-300 underline font-semibold cursor-pointer pt-0.5"
+                  >
+                    Open Experiment Journal →
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

@@ -10,7 +10,8 @@ import {
   Sparkles, 
   Check, 
   Layers,
-  ChevronRight
+  ChevronRight,
+  BookOpen
 } from 'lucide-react';
 
 interface MicroscopeSpecimen {
@@ -87,7 +88,21 @@ const SPECIMENS_CATALOG: MicroscopeSpecimen[] = [
   }
 ];
 
-export const DigitalMicroscopeTool: React.FC = () => {
+export interface DigitalMicroscopeReading {
+  specimenName: string;
+  tissueType: string;
+  magnification: number;
+  cellSizeUm: number;
+  objective: string;
+  timestamp: string;
+}
+
+interface DigitalMicroscopeProps {
+  onLogToJournal?: (reading: DigitalMicroscopeReading) => void;
+  onOpenJournal?: () => void;
+}
+
+export const DigitalMicroscopeTool: React.FC<DigitalMicroscopeProps> = ({ onLogToJournal, onOpenJournal }) => {
   // Optical & Stage Controls
   const [selectedSpecimenId, setSelectedSpecimenId] = useState<string>('spec-onion');
   const [objectiveLens, setObjectiveLens] = useState<'4x' | '10x' | '40x' | '100x'>('10x');
@@ -98,6 +113,11 @@ export const DigitalMicroscopeTool: React.FC = () => {
   const [filterMode, setFilterMode] = useState<'brightfield' | 'fluorescence' | 'darkfield' | 'contrast'>('brightfield');
   const [showReticle, setShowReticle] = useState<boolean>(true);
   const [snapshotNotice, setSnapshotNotice] = useState<string | null>(null);
+  const [journalLoggedNotice, setJournalLoggedNotice] = useState<string | null>(null);
+
+  // Responsive focus zoom & ocular hover coordinates
+  const [isLensHovered, setIsLensHovered] = useState<boolean>(false);
+  const [lensHoverPos, setLensHoverPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Caliper measurement pins
   const [caliperWidthPercent, setCaliperWidthPercent] = useState<number>(40);
@@ -145,9 +165,32 @@ export const DigitalMicroscopeTool: React.FC = () => {
     setTimeout(() => setSnapshotNotice(null), 3000);
   };
 
+  const handleLogToJournal = () => {
+    const reading: DigitalMicroscopeReading = {
+      specimenName: activeSpecimen.name,
+      tissueType: activeSpecimen.tissueType,
+      magnification: totalEffectiveMag,
+      cellSizeUm: parseFloat(measuredDimensionUm),
+      objective: `${objectiveLens} (Eyepiece 10x)`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    };
+    if (onLogToJournal) {
+      onLogToJournal(reading);
+    }
+    setJournalLoggedNotice(`Logged ${activeSpecimen.name} (${measuredDimensionUm} µm at ${totalEffectiveMag}x) to Experiment Journal`);
+    setTimeout(() => setJournalLoggedNotice(null), 4000);
+  };
+
   const handleAutoFocus = () => {
     setCoarseFocus(50);
     setFineFocus(50);
+  };
+
+  const handleLensMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 16;
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 16;
+    setLensHoverPos({ x, y });
   };
 
   return (
@@ -173,7 +216,7 @@ export const DigitalMicroscopeTool: React.FC = () => {
         </div>
 
         {/* Quick Toolbar */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowReticle(!showReticle)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
@@ -193,6 +236,15 @@ export const DigitalMicroscopeTool: React.FC = () => {
             <Camera className="w-3.5 h-3.5" />
             <span>Snap Micrograph</span>
           </button>
+
+          <button
+            onClick={handleLogToJournal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+            title="Append current specimen cytological measurements to Experiment Journal"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Record in Journal</span>
+          </button>
         </div>
       </div>
 
@@ -207,7 +259,25 @@ export const DigitalMicroscopeTool: React.FC = () => {
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>{snapshotNotice}</span>
               </div>
-              <span className="text-[10px] font-mono text-emerald-400 font-bold">SAVED TO JOURNAL</span>
+              <span className="text-[10px] font-mono text-emerald-400 font-bold">SNAPSHOT SAVED</span>
+            </div>
+          )}
+
+          {/* Journal Logged Banner with Link */}
+          {journalLoggedNotice && (
+            <div className="p-3 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-200 text-xs flex items-center justify-between animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-cyan-300 shrink-0" />
+                <span>{journalLoggedNotice}</span>
+              </div>
+              {onOpenJournal && (
+                <button
+                  onClick={onOpenJournal}
+                  className="text-[11px] font-mono text-cyan-300 hover:text-white underline font-bold cursor-pointer"
+                >
+                  View in Journal →
+                </button>
+              )}
             </div>
           )}
 
@@ -228,17 +298,34 @@ export const DigitalMicroscopeTool: React.FC = () => {
             </div>
           </div>
 
-          {/* Circular Digital Eyepiece Viewport */}
-          <div className="flex items-center justify-center p-2">
+          {/* Circular Digital Eyepiece Viewport with Interactive Focus Zoom */}
+          <div className="flex flex-col items-center justify-center p-2">
             <div 
-              className="w-80 h-80 sm:w-96 sm:h-96 rounded-full border-8 border-slate-800 bg-black shadow-2xl relative overflow-hidden flex items-center justify-center transition-all"
+              onMouseEnter={() => setIsLensHovered(true)}
+              onMouseLeave={() => {
+                setIsLensHovered(false);
+                setLensHoverPos({ x: 0, y: 0 });
+              }}
+              onMouseMove={handleLensMouseMove}
+              className="group w-80 h-80 sm:w-96 sm:h-96 rounded-full border-8 border-slate-800 hover:border-cyan-400/70 bg-black shadow-2xl relative overflow-hidden flex items-center justify-center cursor-crosshair transition-all duration-300"
               style={{
-                boxShadow: 'inset 0 0 50px rgba(0,0,0,0.95), 0 0 35px rgba(6, 182, 212, 0.25)'
+                boxShadow: isLensHovered 
+                  ? 'inset 0 0 50px rgba(0,0,0,0.95), 0 0 45px rgba(6, 182, 212, 0.45)'
+                  : 'inset 0 0 50px rgba(0,0,0,0.95), 0 0 35px rgba(6, 182, 212, 0.25)'
               }}
             >
-              {/* Specimen Cellular Texture & Microstructure */}
+              {/* Optical Antireflective Coating & Lens Glare Sweep on Hover */}
               <div 
-                className="w-full h-full flex items-center justify-center transition-all duration-150 relative"
+                className="absolute inset-0 pointer-events-none rounded-full transition-opacity duration-300 z-30"
+                style={{
+                  background: 'radial-gradient(circle at 35% 25%, rgba(168, 85, 247, 0.18) 0%, rgba(6, 182, 212, 0.12) 40%, transparent 70%)',
+                  opacity: isLensHovered ? 1 : 0.4
+                }}
+              />
+
+              {/* Specimen Cellular Texture & Microstructure with Focus Zoom effect */}
+              <div 
+                className="w-full h-full flex items-center justify-center transition-transform duration-200 ease-out relative will-change-transform"
                 style={{
                   filter: `blur(${focusBlurRadius}px) brightness(${illumination / 75}) ${
                     filterMode === 'fluorescence' 
@@ -250,8 +337,8 @@ export const DigitalMicroscopeTool: React.FC = () => {
                       : 'none'
                   }`,
                   transform: `scale(${
-                    (objectiveLens === '4x' ? 0.8 : objectiveLens === '10x' ? 1.0 : objectiveLens === '40x' ? 1.8 : 2.8) * digitalZoom
-                  })`
+                    (objectiveLens === '4x' ? 0.8 : objectiveLens === '10x' ? 1.0 : objectiveLens === '40x' ? 1.8 : 2.8) * digitalZoom * (isLensHovered ? 1.08 : 1.0)
+                  }) translate(${lensHoverPos.x}px, ${lensHoverPos.y}px)`
                 }}
               >
                 {/* SPECIMEN 1: ONION PEEL CELLS */}
@@ -385,6 +472,18 @@ export const DigitalMicroscopeTool: React.FC = () => {
                   Adjust Coarse &amp; Fine Focus Knobs!
                 </div>
               )}
+            </div>
+
+            {/* Interactive Focus Zoom & Optical Loupe Badge */}
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <span className={`text-[11px] font-mono px-3 py-1 rounded-full border transition-all flex items-center gap-1.5 ${
+                isLensHovered 
+                  ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-bold shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+                  : 'bg-black/60 border-white/10 text-slate-400'
+              }`}>
+                <Eye className="w-3 h-3 text-cyan-400 animate-pulse" />
+                <span>{isLensHovered ? 'Focus Zoom Active (1.08x Optical Loupe + Micro-Pan)' : 'Hover over eyepiece lens to activate Focus Zoom & Pan'}</span>
+              </span>
             </div>
           </div>
 
