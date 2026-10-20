@@ -24,7 +24,8 @@ import {
   Sliders,
   Atom,
   Eye,
-  Activity
+  Activity,
+  FlaskConical
 } from 'lucide-react';
 import { UserProfile } from '../types';
 
@@ -39,6 +40,7 @@ interface AstraLandingPageProps {
   onGoToCourses?: () => void;
   onGoToVideos?: () => void;
   onGoToScanner?: () => void;
+  onGoToPracticals?: () => void;
   onGoToLabs?: (subTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal') => void;
   onGoToPlanner?: () => void;
   onGoToCommunity?: () => void;
@@ -60,6 +62,7 @@ export const AstraLandingPage: React.FC<AstraLandingPageProps> = ({
   onGoToCourses,
   onGoToVideos,
   onGoToScanner,
+  onGoToPracticals,
   onGoToLabs,
   onGoToPlanner,
   onGoToCommunity,
@@ -319,6 +322,18 @@ export const AstraLandingPage: React.FC<AstraLandingPageProps> = ({
 
               {/* Direct Quick Launch Buttons */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onGoToPracticals) onGoToPracticals();
+                    else if (onGoToLabs) onGoToLabs('virtual_academy' as any);
+                  }}
+                  className="px-2 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-[10px] font-bold text-purple-300 hover:text-white transition-all text-center cursor-pointer col-span-2 sm:col-span-4 flex items-center justify-center gap-1.5"
+                >
+                  <FlaskConical className="w-3.5 h-3.5 text-purple-400" />
+                  <span>3D Practical Academy (Stages 1–6 Labs)</span>
+                </button>
                 <button
                   type="button"
                   onClick={(e) => {

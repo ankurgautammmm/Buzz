@@ -60,6 +60,7 @@ export const AiTutorChatDrawer: React.FC<AiTutorChatDrawerProps> = ({
   // Voice AI States
   const [isListening, setIsListening] = useState(false);
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
+  const [speechNotice, setSpeechNotice] = useState<string | null>(null);
   const speechRecognitionRef = useRef<any>(null);
 
   const getWelcomeText = (lang: TutorLanguage) => {
@@ -132,7 +133,8 @@ export const AiTutorChatDrawer: React.FC<AiTutorChatDrawerProps> = ({
 
   const toggleVoiceRecognition = () => {
     if (!speechRecognitionRef.current) {
-      alert("Voice input is not supported in this browser. Please use text input.");
+      setSpeechNotice("Voice input is not supported in this browser. Please use text input.");
+      setTimeout(() => setSpeechNotice(null), 4000);
       return;
     }
 
@@ -545,6 +547,13 @@ export const AiTutorChatDrawer: React.FC<AiTutorChatDrawerProps> = ({
           </div>
         )}
       </div>
+
+      {speechNotice && (
+        <div className="px-4 py-2 bg-amber-500/10 border-t border-amber-500/20 text-amber-600 dark:text-amber-300 text-xs flex items-center justify-between">
+          <span>{speechNotice}</span>
+          <button onClick={() => setSpeechNotice(null)} className="text-slate-400 hover:text-white ml-2 text-xs font-bold">&times;</button>
+        </div>
+      )}
 
       {/* Input Row with Voice Mic & Image Trigger */}
       <form 

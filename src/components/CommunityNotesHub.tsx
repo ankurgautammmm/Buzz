@@ -189,6 +189,7 @@ export const CommunityNotesHub: React.FC<CommunityNotesHubProps> = ({
   // Peer Challenge State
   const [peerChallengeCode, setPeerChallengeCode] = useState<string>('');
   const [generatedChallengePin, setGeneratedChallengePin] = useState<string | null>(null);
+  const [challengeStatusMsg, setChallengeStatusMsg] = useState<string | null>(null);
 
   const toggleLike = (noteId: string) => {
     if (!user) {
@@ -268,18 +269,25 @@ export const CommunityNotesHub: React.FC<CommunityNotesHubProps> = ({
               <button
                 onClick={() => {
                   if (peerChallengeCode.trim()) {
-                    alert(`Connecting to Peer Study Challenge Room #${peerChallengeCode}! Initiating synchronized 15-minute examination.`);
+                    setChallengeStatusMsg(`Connecting to Peer Study Challenge Room #${peerChallengeCode}! Initiating synchronized 15-minute examination.`);
                   } else {
                     const pin = Math.floor(1000 + Math.random() * 9000).toString();
                     setGeneratedChallengePin(pin);
-                    alert(`Created Challenge Room PIN: ${pin}! Share this 4-digit code with your classmates.`);
+                    setChallengeStatusMsg(`Created Challenge Room PIN: ${pin}! Share this 4-digit code with your classmates.`);
                   }
+                  setTimeout(() => setChallengeStatusMsg(null), 6000);
                 }}
                 className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition-colors cursor-pointer whitespace-nowrap"
               >
                 {peerChallengeCode ? 'Join Challenge' : 'Generate Room PIN'}
               </button>
             </div>
+            {challengeStatusMsg && (
+              <div className="w-full mt-2 p-2.5 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs flex items-center justify-between">
+                <span>{challengeStatusMsg}</span>
+                <button onClick={() => setChallengeStatusMsg(null)} className="text-slate-400 hover:text-white font-bold">&times;</button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -53,21 +53,22 @@ import { ChemicalBalanceTool } from './labs/ChemicalBalanceTool';
 import { DigitalPhMeterTool } from './labs/DigitalPhMeterTool';
 import { DigitalMicroscopeTool } from './labs/DigitalMicroscopeTool';
 import { ExperimentJournal } from './labs/ExperimentJournal';
+import { VirtualPracticalAcademy } from '../features/virtual-lab';
 import { UserProfile } from '../types';
 
 interface InteractiveLabsProps {
   activeClass: string;
-  initialSubTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal' | 'practicals';
+  initialSubTab?: 'virtual_academy' | 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal' | 'practicals';
   userProfile?: UserProfile | null;
 }
 
 export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({ 
   activeClass, 
-  initialSubTab = 'organs3d',
+  initialSubTab = 'virtual_academy',
   userProfile 
 }) => {
-  // Main Navigation Modes (Mind Maps, 3D Organs, Calibrated Virtual Tools, Simulations, Experiment Journal, Practicals)
-  const [activeMainTab, setActiveMainTab] = useState<'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal' | 'practicals'>(initialSubTab);
+  // Main Navigation Modes (Virtual Academy 3D, Mind Maps, 3D Organs, Calibrated Virtual Tools, Simulations, Experiment Journal, Practicals)
+  const [activeMainTab, setActiveMainTab] = useState<'virtual_academy' | 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal' | 'practicals'>(initialSubTab);
 
   // Live tool readings persisted for quick one-click import into Experiment Journal
   const [liveToolReadings, setLiveToolReadings] = useState<{
@@ -403,6 +404,23 @@ export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({
         {/* Mode Selector Buttons */}
         <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-slate-900/90 border border-white/10 backdrop-blur-md">
           <button
+            onClick={() => setActiveMainTab('virtual_academy')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeMainTab === 'virtual_academy' 
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-900/40 scale-[1.02]' 
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>3D Practical Academy</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono uppercase tracking-wider font-bold ${
+              activeMainTab === 'virtual_academy' ? 'bg-white/20 text-white' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+            }`}>
+              STAGES 1–6
+            </span>
+          </button>
+
+          <button
             onClick={() => setActiveMainTab('mindmaps')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeMainTab === 'mindmaps' 
@@ -485,6 +503,13 @@ export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({
           </button>
         </div>
       </div>
+
+      {/* ========================================================= */}
+      {/* 0. 3D VIRTUAL PRACTICAL ACADEMY MULTI-STAGE WORKFLOWS */}
+      {/* ========================================================= */}
+      {activeMainTab === 'virtual_academy' && (
+        <VirtualPracticalAcademy activeClass={activeClass} userProfile={userProfile} />
+      )}
 
       {/* ========================================================= */}
       {/* 1. MIND MAPS LIBRARY VIEW */}
@@ -1925,29 +1950,38 @@ export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({
                     </h3>
                   </div>
 
-                  {activePractical.linkedTool && (
-                    <button
-                      onClick={() => {
-                        if (activePractical.linkedTool === 'microscope') {
-                          setSelectedToolId('microscope');
-                          setActiveMainTab('virtual_tools');
-                        } else if (activePractical.linkedTool === 'balance') {
-                          setSelectedToolId('balance');
-                          setActiveMainTab('virtual_tools');
-                        } else if (activePractical.linkedTool === 'ph_meter') {
-                          setSelectedToolId('ph_meter');
-                          setActiveMainTab('virtual_tools');
-                        } else {
-                          setActiveMainTab('simulations');
-                        }
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
-                    >
-                      <Sliders className="w-3.5 h-3.5" />
-                      <span>Launch Virtual Apparatus</span>
-                    </button>
-                  )}
-                </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => setActiveMainTab('virtual_academy')}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Open 3D Practical Academy</span>
+                      </button>
+                      {activePractical.linkedTool && (
+                        <button
+                          onClick={() => {
+                            if (activePractical.linkedTool === 'microscope') {
+                              setSelectedToolId('microscope');
+                              setActiveMainTab('virtual_tools');
+                            } else if (activePractical.linkedTool === 'balance') {
+                              setSelectedToolId('balance');
+                              setActiveMainTab('virtual_tools');
+                            } else if (activePractical.linkedTool === 'ph_meter') {
+                              setSelectedToolId('ph_meter');
+                              setActiveMainTab('virtual_tools');
+                            } else {
+                              setActiveMainTab('simulations');
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs transition-all cursor-pointer shrink-0"
+                        >
+                          <Sliders className="w-3.5 h-3.5" />
+                          <span>Tool Spec</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
                 {/* Objective */}
                 <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs">

@@ -37,6 +37,7 @@ import { CourseGeneratorSection } from './components/CourseGeneratorSection';
 import { EducationalVideoStudio } from './components/EducationalVideoStudio';
 import { HomeworkScannerSection } from './components/HomeworkScannerSection';
 import { InteractiveLabsAndMindMaps } from './components/InteractiveLabsAndMindMaps';
+import { VirtualPracticalAcademy } from './features/virtual-lab';
 import { AdaptiveLearningDashboard } from './components/AdaptiveLearningDashboard';
 import { ExamRevisionPlanner } from './components/ExamRevisionPlanner';
 import { CommunityNotesHub } from './components/CommunityNotesHub';
@@ -94,9 +95,9 @@ export default function App() {
   // App Navigation & Selected Grade (Default to Class 11 or landing)
   const [currentTab, setCurrentTab] = useState<NavTab>('landing');
   const [activeClass, setActiveClass] = useState<string>('Class 11');
-  const [labsInitialSubTab, setLabsInitialSubTab] = useState<'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal'>('organs3d');
+  const [labsInitialSubTab, setLabsInitialSubTab] = useState<'virtual_academy' | 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal' | 'practicals'>('virtual_academy');
 
-  const handleGoToLabs = (subTab: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal' = 'organs3d') => {
+  const handleGoToLabs = (subTab: 'virtual_academy' | 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal' | 'practicals' = 'virtual_academy') => {
     setLabsInitialSubTab(subTab);
     setCurrentTab('labs');
   };
@@ -126,6 +127,12 @@ export default function App() {
   const [showAuthWall, setShowAuthWall] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const [authWallMessage, setAuthWallMessage] = useState<string | undefined>(undefined);
+  // Toast notification state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   // 1. Listen for Auth State & sync Profile Lifecycle
   useEffect(() => {
@@ -444,7 +451,7 @@ export default function App() {
       await saveOfflineNote(fullNote);
       setNotesList((prev) => [fullNote, ...prev.filter(n => n.id !== noteId)]);
       setActiveNoteSavedId(noteId);
-      alert('Handwritten note saved to your Student Library (Offline & Online ready)!');
+      showToast('Handwritten note saved to your Student Library (Offline & Online ready)!');
     } catch (err) {
       logger.error('App', 'Failed to save note to cache:', err);
     }
@@ -810,6 +817,7 @@ export default function App() {
             onGoToCourses={() => setCurrentTab('courses')}
             onGoToVideos={() => setCurrentTab('videos')}
             onGoToScanner={() => setCurrentTab('scanner')}
+            onGoToPracticals={() => setCurrentTab('practicals')}
             onGoToLabs={(subTab) => handleGoToLabs(subTab)}
             onGoToPlanner={() => setCurrentTab('planner')}
             onGoToCommunity={() => setCurrentTab('community')}
@@ -1128,6 +1136,21 @@ export default function App() {
           />
         )}
 
+        {/* Tab: Virtual Practical Academy (CBSE / NEET / JEE Main / CUET Multi-Stage Labs) */}
+        {(currentTab === 'practicals' || currentTab === 'practical_academy') && (
+          <VirtualPracticalAcademy
+            activeClass={activeClass}
+            userProfile={userProfile}
+            onNavigateTab={(tab, subTab) => {
+              if (tab === 'labs' && subTab) {
+                handleGoToLabs(subTab as any);
+              } else {
+                handleTabChange(tab as NavTab);
+              }
+            }}
+          />
+        )}
+
         {/* Tab: Mind Maps & Virtual Labs */}
         {currentTab === 'labs' && (
           <InteractiveLabsAndMindMaps
@@ -1371,6 +1394,14 @@ export default function App() {
 
       {/* Global Accessibility & Neuroinclusive Floating Toolbar */}
       <AccessibilityToolbar />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-slate-900/95 border border-emerald-500/50 text-emerald-200 text-xs sm:text-sm font-semibold rounded-xl shadow-2xl shadow-black/80 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
       {/* Offline Status & Local PWA Cache Notification */}
       <OfflineIndicator />

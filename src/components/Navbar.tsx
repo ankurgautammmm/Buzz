@@ -23,7 +23,8 @@ import {
   Users,
   Download,
   Heart,
-  Sliders
+  Sliders,
+  FlaskConical
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { UserProfile, AuthStateStatus } from '../types';
@@ -40,6 +41,8 @@ export type NavTab =
   | 'tests' 
   | 'planner'
   | 'community'
+  | 'practicals'
+  | 'practical_academy'
   | 'labs'
   | 'books' 
   | 'syllabus' 
@@ -63,7 +66,7 @@ interface NavbarProps {
   onOpenChat: () => void;
   onOpenComplaint: () => void;
   onOpenProfile?: () => void;
-  onGoToLabs?: (subTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal') => void;
+  onGoToLabs?: (subTab?: 'virtual_academy' | 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal' | 'practicals') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -99,9 +102,12 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
   }, []);
 
+  const [installTooltip, setInstallTooltip] = useState<string | null>(null);
+
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
-      alert('To install Buzzing Brain, open your browser menu and tap "Add to Home Screen" or "Install App".');
+      setInstallTooltip('Browser menu → "Add to Home Screen"');
+      setTimeout(() => setInstallTooltip(null), 4000);
       return;
     }
     deferredPrompt.prompt();
@@ -281,6 +287,23 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Community</span>
             </button>
 
+            {/* Virtual Practical Academy Dedicated Main Tab */}
+            <button
+              onClick={() => onTabChange('practicals')}
+              className={`px-3 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1.5 font-bold ${
+                currentTab === 'practicals' || currentTab === 'practical_academy'
+                  ? 'text-white bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md shadow-purple-600/30 ring-1 ring-purple-400/50 scale-[1.02]'
+                  : 'text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 hover:text-white'
+              }`}
+              title="Virtual Practical Academy (CBSE, NEET, JEE & CUET Multi-Stage Labs)"
+            >
+              <FlaskConical className="w-3.5 h-3.5 text-purple-400" />
+              <span>Practical Academy</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-500/40 text-purple-200 font-mono font-black">
+                3D
+              </span>
+            </button>
+
             {/* 3D Anatomical Organs, Virtual Tools & Mind Maps Hub */}
             <div className="relative group">
               <button
@@ -310,6 +333,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="px-2 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 border-b border-white/10 mb-1">
                   Scientific Visualization Hub
                 </div>
+                <button
+                  onClick={() => onGoToLabs ? onGoToLabs('virtual_academy') : onTabChange('labs')}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold hover:bg-purple-500/15 text-slate-200 hover:text-white transition-colors cursor-pointer"
+                >
+                  <FlaskConical className="w-4 h-4 text-purple-400 shrink-0" />
+                  <div>
+                    <div className="font-bold text-white text-[11px] flex items-center gap-1.5">
+                      <span>3D Practical Academy</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-purple-500/30 text-purple-300 font-mono">NEW 3D</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">Stages 1–6: Three.js labs, formulas &amp; MCQs</div>
+                  </div>
+                </button>
                 <button
                   onClick={() => onGoToLabs ? onGoToLabs('organs3d') : onTabChange('labs')}
                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold hover:bg-rose-500/15 text-slate-200 hover:text-white transition-colors cursor-pointer"
@@ -504,14 +540,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
 
             {/* Install PWA Button */}
-            <button
-              onClick={handleInstallClick}
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white font-medium text-xs border border-white/15 transition-all cursor-pointer"
-              title="Install Buzzing Brain PWA App for offline study"
-            >
-              <Download className="w-3.5 h-3.5 text-amber-400" />
-              <span>Install App</span>
-            </button>
+            <div className="relative hidden md:inline-block">
+              <button
+                onClick={handleInstallClick}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white font-medium text-xs border border-white/15 transition-all cursor-pointer"
+                title="Install Buzzing Brain PWA App for offline study"
+              >
+                <Download className="w-3.5 h-3.5 text-amber-400" />
+                <span>Install App</span>
+              </button>
+              {installTooltip && (
+                <div className="absolute right-0 top-full mt-2 w-56 p-2 rounded-xl bg-slate-900 border border-amber-400/40 text-amber-200 text-[11px] shadow-xl z-50 animate-in fade-in">
+                  {installTooltip}
+                </div>
+              )}
+            </div>
 
             {/* Astra White Pill CTA Button: "Try Buzzing Brain" */}
             <button
@@ -585,6 +628,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'community' ? 'text-emerald-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
           >
             Community
+          </button>
+          <button
+            onClick={() => onTabChange('practicals')}
+            className={`px-3 py-1 rounded-lg shrink-0 flex items-center gap-1.5 font-bold ${
+              currentTab === 'practicals' || currentTab === 'practical_academy'
+                ? 'text-white bg-purple-600 shadow-xs'
+                : 'text-purple-300 bg-purple-500/10 border border-purple-500/30 hover:bg-white/5'
+            }`}
+          >
+            <FlaskConical className="w-3 h-3 text-purple-400" />
+            <span>Practical Academy</span>
           </button>
           <button
             onClick={() => onGoToLabs ? onGoToLabs('organs3d') : onTabChange('labs')}

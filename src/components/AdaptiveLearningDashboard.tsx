@@ -163,9 +163,12 @@ export const AdaptiveLearningDashboard: React.FC<AdaptiveDashboardProps> = ({
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
   }, []);
 
+  const [installNotice, setInstallNotice] = useState<string | null>(null);
+
   const handleInstallPwa = async () => {
     if (!deferredInstallPrompt) {
-      alert('To install Buzzing Brain, open your browser menu and tap "Add to Home Screen" or "Install App" for fast offline access.');
+      setInstallNotice('To install Buzzing Brain, open your browser menu and tap "Add to Home Screen" or "Install App".');
+      setTimeout(() => setInstallNotice(null), 5000);
       return;
     }
     deferredInstallPrompt.prompt();
@@ -399,6 +402,11 @@ export const AdaptiveLearningDashboard: React.FC<AdaptiveDashboardProps> = ({
               <Download className="w-3.5 h-3.5" />
               <span>{isPwaInstalled ? 'App Installed ✓' : 'Install PWA App'}</span>
             </button>
+            {installNotice && (
+              <p className="text-[10px] text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg">
+                {installNotice}
+              </p>
+            )}
           </div>
         </div>
       </div>
