@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { ChatMessage, NoteContentPayload } from '../types';
 import { AIMessageRenderer } from './AIMessageRenderer';
+import { logger } from '../services/logger';
 
 interface AiTutorChatDrawerProps {
   isOpen: boolean;
@@ -231,7 +232,7 @@ export const AiTutorChatDrawer: React.FC<AiTutorChatDrawerProps> = ({
       };
       setMessages([...nextHistory, botMsg]);
     } catch (err) {
-      console.error('Chat error:', err);
+      logger.error('AiTutorChatDrawer', 'Chat error', err);
       const errorMsg: ChatMessage = {
         id: `err_${Date.now()}`,
         role: 'model',

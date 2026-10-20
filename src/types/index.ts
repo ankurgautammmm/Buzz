@@ -107,6 +107,7 @@ export interface NoteContentPayload {
   examWeightageTip: string;
   sections: NoteSection[];
   pages?: NotebookPage[]; // Multi-page notebook architecture
+  totalCoursePages?: number;
   topperMnemonics?: string[];
   ncertExamAlert?: string;
   quickSummaryReview?: string[];

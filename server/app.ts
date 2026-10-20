@@ -24,6 +24,23 @@ export async function startServer() {
   // REST API endpoints
   app.use('/api', apiRouter);
 
+  // Dedicated static route for rendered educational Shorts with byte-range seeking
+  const shortsDir = path.resolve(process.cwd(), 'public', 'generated-shorts');
+  if (!fs.existsSync(shortsDir)) {
+    fs.mkdirSync(shortsDir, { recursive: true });
+  }
+  app.use('/generated-shorts', express.static(shortsDir, {
+    acceptRanges: true,
+    maxAge: '1d',
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.mp4')) {
+        res.setHeader('Content-Type', 'video/mp4');
+      } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
+      }
+    }
+  }));
+
   // Locate the built frontend dist/ directory
   const candidatePaths = [
     path.resolve(__dirname, 'index.html'),

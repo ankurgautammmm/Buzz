@@ -79,11 +79,50 @@ export const NcertBooksSection: React.FC<NcertBooksSectionProps> = ({
             href="https://ncert.nic.in/textbook.php"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-xs font-semibold transition-all"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-xs font-semibold transition-all"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
-            <span>Official NCERT e-Textbook Portal</span>
+            <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
+            <span>NCERT Textbooks</span>
           </a>
+
+          <a
+            href="https://ncert.nic.in/division/pd/online-textbook.php?ln=en"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-xs font-semibold transition-all"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
+            <span>Online Textbooks</span>
+          </a>
+
+          <a
+            href="https://epathshala.nic.in/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-xs font-semibold transition-all"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+            <span>ePathshala Portal</span>
+          </a>
+
+          <a
+            href="https://diksha.gov.in/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-xs font-semibold transition-all"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-rose-400" />
+            <span>DIKSHA National Portal</span>
+          </a>
+        </div>
+
+        {/* Copyright & Permission Compliance Disclaimer */}
+        <div className="mt-4 p-3.5 rounded-2xl bg-slate-950/80 border border-amber-500/20 text-[11px] text-slate-400 flex items-start gap-2.5">
+          <BookOpen className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            <strong className="text-amber-300">Official Resource Linking &amp; Copyright Compliance: </strong> 
+            Buzzing Brain strictly respects applicable NCERT, ePathshala, and Ministry of Education copyright terms. We direct students to official government portals for original copyrighted textbooks without unauthorized republication, bulk mirroring, or redistribution. Buzzing Brain provides original handwritten educational explanations, simulations, and formative assessments.
+          </p>
         </div>
       </div>
 

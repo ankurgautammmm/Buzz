@@ -23,6 +23,7 @@ import {
   Eye
 } from 'lucide-react';
 import { UserProfile } from '../types';
+import { logger } from '../services/logger';
 
 interface CourseTopic {
   id?: string;
@@ -136,7 +137,7 @@ export const CourseGeneratorSection: React.FC<CourseGeneratorSectionProps> = ({
         setCheckedItems({});
       }
     } catch (err) {
-      console.error('Course generation error:', err);
+      logger.error('CourseGeneratorSection', 'Course generation error', err);
     } finally {
       setIsLoading(false);
     }

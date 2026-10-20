@@ -48,9 +48,19 @@ import { ComplaintModal } from './components/ComplaintModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { TermsPrivacyModal } from './components/TermsPrivacyModal';
 import { AiTutorChatDrawer } from './components/AiTutorChatDrawer';
+import { AiTutorStudio } from './components/AiTutorStudio';
+import { TeacherPortal } from './components/TeacherPortal';
 import { AuthWallModal } from './components/AuthWallModal';
 import { InteractiveSpaceBackground } from './components/InteractiveSpaceBackground';
 import { COMPREHENSIVE_CHAPTER_NOTES, getCuratedChapterNote } from './data/curatedChapterNotes';
+import { 
+  getFastLocalCachedNotes, 
+  getOfflineNotes, 
+  saveOfflineNote, 
+  saveMultipleOfflineNotes, 
+  deleteOfflineNote 
+} from './services/offlineNotesCache';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { 
   StudyNote, 
   UserProfile, 
@@ -84,15 +94,17 @@ export default function App() {
   // App Navigation & Selected Grade (Default to Class 11 or landing)
   const [currentTab, setCurrentTab] = useState<NavTab>('landing');
   const [activeClass, setActiveClass] = useState<string>('Class 11');
-  const [labsInitialSubTab, setLabsInitialSubTab] = useState<'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations'>('organs3d');
+  const [labsInitialSubTab, setLabsInitialSubTab] = useState<'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal'>('organs3d');
 
-  const handleGoToLabs = (subTab: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' = 'organs3d') => {
+  const handleGoToLabs = (subTab: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal' = 'organs3d') => {
     setLabsInitialSubTab(subTab);
     setCurrentTab('labs');
   };
 
-  // Study Notes State
-  const [notesList, setNotesList] = useState<StudyNote[]>([]);
+  // Study Notes State — Initialized from fast offline cache so student library is instantly available offline
+  const [notesList, setNotesList] = useState<StudyNote[]>(() => {
+    return getFastLocalCachedNotes();
+  });
   const [currentActiveNote, setCurrentActiveNote] = useState<NoteContentPayload | null>(
     COMPREHENSIVE_CHAPTER_NOTES["Class 10:Science:Photosynthesis"] || null
   );
@@ -196,11 +208,48 @@ export default function App() {
     return () => unsub();
   }, [firebaseUser?.uid]);
 
-  // 2. Real-time Firestore Notes Listener
+  // 2. Real-time Firestore Notes Listener & Offline Cache Hydration
   useEffect(() => {
+    // Immediate hydration from full IndexedDB offline database
+    getOfflineNotes().then((cachedNotes) => {
+      if (cachedNotes && cachedNotes.length > 0) {
+        setNotesList((prev) => {
+          const map = new Map<string, StudyNote>();
+          for (const n of prev) map.set(n.id, n);
+          for (const n of cachedNotes) map.set(n.id, n);
+          return Array.from(map.values()).sort(
+            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
+        });
+      }
+    });
+
     const unsubNotes = subscribeToStudyNotes((notes) => {
-      setNotesList(notes);
-      logger.info('App', `Synced ${notes.length} notes from Firestore`);
+      if (notes && notes.length > 0) {
+        setNotesList((prev) => {
+          const map = new Map<string, StudyNote>();
+          // Remote authoritative notes
+          for (const n of notes) map.set(n.id, n);
+          // Keep offline notes not yet uploaded
+          for (const n of prev) {
+            if (!map.has(n.id)) map.set(n.id, n);
+          }
+          const merged = Array.from(map.values()).sort(
+            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
+          // Persist to offline cache
+          saveMultipleOfflineNotes(merged).catch(() => {});
+          return merged;
+        });
+        logger.info('App', `Synced ${notes.length} notes from Firestore & updated offline cache`);
+      } else {
+        // Fallback to offline cache
+        getOfflineNotes().then((cached) => {
+          if (cached && cached.length > 0) {
+            setNotesList(cached);
+          }
+        });
+      }
     });
 
     return () => {
@@ -350,35 +399,54 @@ export default function App() {
     }
   };
 
-  // 5. Save current note to user's library manually
+  // 5. Save current note to user's library (with offline cache + remote sync)
   const handleSaveActiveNote = async () => {
     if (!currentActiveNote || !currentActiveStyle) return;
-    if (!firebaseUser) {
-      setAuthWallMessage("Please log in to save handwritten notes to your personal student library.");
-      setShowAuthWall(true);
-      return;
+
+    const notePayload: Omit<StudyNote, 'id' | 'createdAt' | 'updatedAt'> = {
+      title: currentActiveNote.title,
+      classGrade: currentActiveNote.classGrade,
+      subject: currentActiveNote.subject,
+      chapter: currentActiveNote.chapter,
+      topic: currentActiveNote.topic,
+      commandUsed: `/handwriting ${currentActiveNote.classGrade} ${currentActiveNote.subject} ${currentActiveNote.chapter}`,
+      contentJson: JSON.stringify(currentActiveNote),
+      parsedContent: currentActiveNote,
+      styleConfig: JSON.stringify(currentActiveStyle),
+      parsedStyle: currentActiveStyle,
+      userId: firebaseUser ? firebaseUser.uid : 'offline_guest',
+      userEmail: firebaseUser?.email || undefined,
+      userName: firebaseUser?.displayName || 'Student',
+      isPublic: true,
+      likesCount: 0,
+    };
+
+    let remoteNoteId: string | null = null;
+    const isOnline = typeof navigator !== 'undefined' && navigator.onLine;
+
+    if (firebaseUser && isOnline) {
+      try {
+        remoteNoteId = await saveStudyNote(notePayload);
+      } catch (err) {
+        logger.warn('App', 'Remote Firestore save deferred, saving to offline cache:', err);
+      }
     }
 
+    const noteId = remoteNoteId || `note_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const fullNote: StudyNote = {
+      ...notePayload,
+      id: noteId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
     try {
-      const noteId = await saveStudyNote({
-        title: currentActiveNote.title,
-        classGrade: currentActiveNote.classGrade,
-        subject: currentActiveNote.subject,
-        chapter: currentActiveNote.chapter,
-        topic: currentActiveNote.topic,
-        commandUsed: `/handwriting ${currentActiveNote.classGrade} ${currentActiveNote.subject} ${currentActiveNote.chapter}`,
-        contentJson: JSON.stringify(currentActiveNote),
-        styleConfig: JSON.stringify(currentActiveStyle),
-        userId: firebaseUser.uid,
-        userEmail: firebaseUser.email || undefined,
-        userName: firebaseUser.displayName || 'Student',
-        isPublic: true,
-        likesCount: 0,
-      });
+      await saveOfflineNote(fullNote);
+      setNotesList((prev) => [fullNote, ...prev.filter(n => n.id !== noteId)]);
       setActiveNoteSavedId(noteId);
-      alert('Handwritten note saved to your Student Library!');
+      alert('Handwritten note saved to your Student Library (Offline & Online ready)!');
     } catch (err) {
-      logger.error('App', 'Failed to save note:', err);
+      logger.error('App', 'Failed to save note to cache:', err);
     }
   };
 
@@ -406,26 +474,43 @@ export default function App() {
       if (data.section) {
         const updated = [...currentActiveNote.sections];
         updated[secIdx] = data.section;
-        setCurrentActiveNote({
+        const updatedNote = {
           ...currentActiveNote,
           sections: updated,
-        });
+        };
+        setCurrentActiveNote(updatedNote);
+
+        // Update in offline cache if currently saved
+        if (activeNoteSavedId) {
+          const found = notesList.find(n => n.id === activeNoteSavedId);
+          if (found) {
+            const updatedStudyNote: StudyNote = {
+              ...found,
+              contentJson: JSON.stringify(updatedNote),
+              parsedContent: updatedNote,
+              updatedAt: new Date().toISOString(),
+            };
+            saveOfflineNote(updatedStudyNote).catch(() => {});
+          }
+        }
       }
     } catch (err) {
       logger.error('App', 'Failed to regenerate individual note section:', err);
     }
   };
 
-  // 6. Select Note from Library
+  // 6. Select Note from Library (Fully functional offline!)
   const handleSelectNoteFromLibrary = (note: StudyNote) => {
-    if (!firebaseUser) {
+    const isOnline = typeof navigator !== 'undefined' && navigator.onLine;
+    // Only prompt for auth when online and viewing other students' non-curated notes
+    if (!firebaseUser && isOnline && !note.id.startsWith('curated_') && !note.id.startsWith('offline_')) {
       setAuthWallMessage("Please log in or sign up to read and open full handwritten study notes from the library.");
       setShowAuthWall(true);
       return;
     }
 
     try {
-      const parsedContent = JSON.parse(note.contentJson) as NoteContentPayload;
+      const parsedContent = (note.parsedContent || JSON.parse(note.contentJson)) as NoteContentPayload;
       let parsedStyle: HandwritingStyleConfig = {
         penType: 'gel-pen',
         inkColor: 'royal-blue',
@@ -438,7 +523,9 @@ export default function App() {
         showMarginLine: true,
         showHoles: true,
       };
-      if (note.styleConfig) {
+      if (note.parsedStyle) {
+        parsedStyle = note.parsedStyle;
+      } else if (note.styleConfig) {
         parsedStyle = JSON.parse(note.styleConfig);
       }
       setCurrentActiveNote(parsedContent);
@@ -451,10 +538,16 @@ export default function App() {
     }
   };
 
-  // 7. Delete Note
+  // 7. Delete Note (removes from offline cache and Firestore)
   const handleDeleteNote = async (noteId: string) => {
     try {
-      await deleteStudyNote(noteId);
+      await deleteOfflineNote(noteId);
+      setNotesList((prev) => prev.filter(n => n.id !== noteId));
+
+      const isOnline = typeof navigator !== 'undefined' && navigator.onLine;
+      if (firebaseUser && isOnline && !noteId.startsWith('curated_') && !noteId.startsWith('offline_')) {
+        await deleteStudyNote(noteId).catch(() => {});
+      }
       if (activeNoteSavedId === noteId) {
         setActiveNoteSavedId(null);
       }
@@ -720,6 +813,8 @@ export default function App() {
             onGoToLabs={(subTab) => handleGoToLabs(subTab)}
             onGoToPlanner={() => setCurrentTab('planner')}
             onGoToCommunity={() => setCurrentTab('community')}
+            onGoToAiTutor={() => setCurrentTab('ai-tutor')}
+            onGoToTeacher={() => setCurrentTab('teacher')}
             onSignIn={handleSignIn}
             onSignUp={handleSignUp}
             user={userProfile}
@@ -926,6 +1021,9 @@ export default function App() {
             onSelectNote={handleSelectNoteFromLibrary}
             onDeleteNote={handleDeleteNote}
             onNewNoteClick={() => setCurrentTab('studio')}
+            onSynthesizeChapter={(cls, sub, ch) => {
+              handleExecuteCommand(`/handwriting ${cls} ${sub} ${ch}`);
+            }}
           />
         )}
 
@@ -982,6 +1080,7 @@ export default function App() {
             }}
             onGoToTests={() => setCurrentTab('tests')}
             onGoToCourses={() => setCurrentTab('courses')}
+            onGoToAiTutor={() => setCurrentTab('ai-tutor')}
             onRequireAuth={() => {
               setAuthWallMessage("Please log in or sign up to view your personalized study dashboard.");
               setShowAuthWall(true);
@@ -1079,6 +1178,42 @@ export default function App() {
             onRequireAuth={() => {
               setAuthWallMessage("Please log in or sign up to upvote notes and join peer study circles.");
               setShowAuthWall(true);
+            }}
+          />
+        )}
+
+        {/* Tab: Dedicated Full-Page AI Tutor Studio (Phase 4) */}
+        {currentTab === 'ai-tutor' && (
+          <AiTutorStudio
+            userProfile={userProfile}
+            activeClass={activeClass}
+            onClassChange={setActiveClass}
+            onOpenNotesWithPayload={(payload, style) => {
+              setCurrentActiveNote(payload);
+              if (style) setCurrentActiveStyle(style);
+              setCurrentTab('studio');
+            }}
+            onNavigateToSection={(tab, subTab) => {
+              if (tab === 'labs' && subTab) {
+                handleGoToLabs(subTab);
+              } else {
+                setCurrentTab(tab);
+              }
+            }}
+          />
+        )}
+
+        {/* Tab: Teacher & Educator Command Portal (Phase 8) */}
+        {currentTab === 'teacher' && (
+          <TeacherPortal
+            userProfile={userProfile}
+            activeClass={activeClass}
+            onNavigateToSection={(tab, subTab) => {
+              if (tab === 'labs' && subTab) {
+                handleGoToLabs(subTab);
+              } else {
+                setCurrentTab(tab);
+              }
             }}
           />
         )}
@@ -1236,6 +1371,9 @@ export default function App() {
 
       {/* Global Accessibility & Neuroinclusive Floating Toolbar */}
       <AccessibilityToolbar />
+
+      {/* Offline Status & Local PWA Cache Notification */}
+      <OfflineIndicator />
     </InteractiveSpaceBackground>
   );
 }

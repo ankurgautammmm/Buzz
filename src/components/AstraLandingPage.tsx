@@ -39,9 +39,11 @@ interface AstraLandingPageProps {
   onGoToCourses?: () => void;
   onGoToVideos?: () => void;
   onGoToScanner?: () => void;
-  onGoToLabs?: (subTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations') => void;
+  onGoToLabs?: (subTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal') => void;
   onGoToPlanner?: () => void;
   onGoToCommunity?: () => void;
+  onGoToAiTutor?: () => void;
+  onGoToTeacher?: () => void;
   onSignIn: () => void;
   onSignUp: () => void;
   user: UserProfile | null;
@@ -61,6 +63,8 @@ export const AstraLandingPage: React.FC<AstraLandingPageProps> = ({
   onGoToLabs,
   onGoToPlanner,
   onGoToCommunity,
+  onGoToAiTutor,
+  onGoToTeacher,
   onSignIn,
   onSignUp,
   user,
@@ -99,20 +103,28 @@ export const AstraLandingPage: React.FC<AstraLandingPageProps> = ({
               Complete, verified NCERT study notes formatted like a topper's two-page handwritten register. Ruled notebook paper, real equations, scientific diagrams, and chapter assessments — 100% open and free.
             </p>
 
-            {/* Single Primary CTA + Quiet Secondary Link */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-2">
+            {/* Dual CTA: AI Tutor Studio + Handwritten Studio */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-2">
+              <button
+                onClick={() => onGoToAiTutor ? onGoToAiTutor() : handlePrimaryCta()}
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm transition-all shadow-xl hover:shadow-amber-400/25 active:scale-[0.98] cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-slate-950" />
+                <span>Open AI Tutor Studio</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
               <button
                 onClick={handlePrimaryCta}
-                className="inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-base transition-all shadow-xl hover:shadow-amber-400/25 active:scale-[0.98] cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm border border-slate-700 transition-all cursor-pointer"
               >
-                <span>{user ? 'Open Notes Studio' : 'Start Learning Free'}</span>
-                <ArrowRight className="w-5 h-5" />
+                <span>{user ? 'Notes Studio' : 'Free Notes'}</span>
               </button>
 
               {!user && (
                 <button
                   onClick={onSignIn}
-                  className="inline-flex items-center justify-center gap-1.5 px-5 py-4 text-sm font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-3.5 text-xs font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
                 >
                   <span>Already have an account?</span>
                   <span className="text-amber-400 font-semibold underline underline-offset-4">Log In</span>
@@ -306,7 +318,7 @@ export const AstraLandingPage: React.FC<AstraLandingPageProps> = ({
               </p>
 
               {/* Direct Quick Launch Buttons */}
-              <div className="grid grid-cols-3 gap-1.5 pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-2">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -336,6 +348,16 @@ export const AstraLandingPage: React.FC<AstraLandingPageProps> = ({
                   className="px-2 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-[10px] font-bold text-amber-300 hover:text-white transition-all text-center cursor-pointer"
                 >
                   Mind Maps
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onGoToLabs) onGoToLabs('journal');
+                  }}
+                  className="px-2 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-[10px] font-bold text-emerald-300 hover:text-white transition-all text-center cursor-pointer"
+                >
+                  Lab Journal
                 </button>
               </div>
             </div>

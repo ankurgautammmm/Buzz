@@ -2,6 +2,7 @@ import React from 'react';
 import { 
   BookOpen, 
   ShieldCheck, 
+  Shield,
   AlertCircle, 
   LogIn, 
   LogOut, 
@@ -26,10 +27,12 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { UserProfile, AuthStateStatus } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 export type NavTab = 
   | 'landing' 
   | 'dashboard'
+  | 'ai-tutor'
   | 'courses'
   | 'studio' 
   | 'videos'
@@ -40,6 +43,7 @@ export type NavTab =
   | 'labs'
   | 'books' 
   | 'syllabus' 
+  | 'teacher'
   | 'youtube' 
   | 'library' 
   | 'admin' 
@@ -59,7 +63,7 @@ interface NavbarProps {
   onOpenChat: () => void;
   onOpenComplaint: () => void;
   onOpenProfile?: () => void;
-  onGoToLabs?: (subTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations') => void;
+  onGoToLabs?: (subTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -176,6 +180,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-amber-400" />
               <span>Dashboard</span>
+            </button>
+
+            <button
+              onClick={() => onTabChange('ai-tutor')}
+              className={`px-3 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1.5 font-bold ${
+                currentTab === 'ai-tutor'
+                  ? 'text-slate-950 bg-gradient-to-r from-amber-400 to-amber-300 shadow-md shadow-amber-400/20 scale-[1.02]'
+                  : 'text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>AI Tutor Studio</span>
+              <span className="text-[9px] px-1 py-0.2 rounded-full bg-amber-500/30 text-amber-200 font-mono font-black">
+                FULL
+              </span>
             </button>
 
             <button
@@ -321,6 +340,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <div className="text-[10px] text-slate-400">Class 9–12 Complete Trees</div>
                   </div>
                 </button>
+                <button
+                  onClick={() => onGoToLabs ? onGoToLabs('journal') : onTabChange('labs')}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold hover:bg-emerald-500/15 text-slate-200 hover:text-white transition-colors cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <div className="font-bold text-white text-[11px] flex items-center gap-1.5">
+                      <span>Experiment Journal</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">PDF</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">Official CBSE/NCERT Practical Records</div>
+                  </div>
+                </button>
               </div>
             </div>
 
@@ -369,6 +401,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               Library
             </button>
 
+            <button
+              onClick={() => onTabChange('teacher')}
+              className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer flex items-center gap-1 ${
+                currentTab === 'teacher'
+                  ? 'text-white bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                  : 'hover:text-white hover:bg-white/5 text-blue-400'
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5 text-blue-400" />
+              <span>Teacher</span>
+            </button>
+
             {isAdmin && (
               <button
                 onClick={() => onTabChange('admin')}
@@ -386,6 +430,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Action Buttons (ChatGPT 6 Astra Style: "Log in" and "Try Buzzing Brain") */}
           <div className="flex items-center gap-2.5">
+            {/* PWA In-App Install Prompt */}
+            <PWAInstallButton />
+
             {/* Ask AI Study Buddy */}
             <button
               onClick={onOpenChat}
@@ -491,6 +538,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             Dashboard
           </button>
           <button
+            onClick={() => onTabChange('ai-tutor')}
+            className={`px-3 py-1 rounded-lg shrink-0 flex items-center gap-1 font-bold ${currentTab === 'ai-tutor' ? 'text-slate-950 bg-amber-400' : 'text-amber-400 bg-amber-400/10 border border-amber-400/30'}`}
+          >
+            <Sparkles className="w-3 h-3" />
+            <span>AI Tutor Studio</span>
+          </button>
+          <button
             onClick={() => onTabChange('courses')}
             className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'courses' ? 'text-amber-400 font-bold bg-white/15' : 'hover:bg-white/5'}`}
           >
@@ -562,6 +616,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             className={`px-3 py-1 rounded-lg shrink-0 ${currentTab === 'library' ? 'text-white font-bold bg-white/15' : 'hover:bg-white/5'}`}
           >
             Library
+          </button>
+          <button
+            onClick={() => onTabChange('teacher')}
+            className={`px-3 py-1 rounded-lg shrink-0 text-blue-400 ${currentTab === 'teacher' ? 'font-bold bg-blue-500/20 text-blue-300' : 'hover:bg-white/5'}`}
+          >
+            Teacher
           </button>
           {isAdmin && (
             <button

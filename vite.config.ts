@@ -15,8 +15,15 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        injectRegister: null,
-        includeAssets: ['favicon.ico', 'BuzzingBrain_Video_Watermark_150x150.png', 'logo.png'],
+        includeAssets: [
+          'favicon.ico', 
+          'BuzzingBrain_Video_Watermark_150x150.png', 
+          'logo.png',
+          'pwa-192x192.png',
+          'pwa-512x512.png',
+          'pwa-maskable-512x512.png',
+          'apple-touch-icon.png'
+        ],
         manifest: {
           id: '/',
           name: 'Buzzing Brain — Free Education for All',
@@ -29,30 +36,43 @@ export default defineConfig(() => {
           scope: '/',
           icons: [
             {
-              src: '/BuzzingBrain_Video_Watermark_150x150.png',
-              sizes: '150x150',
+              src: '/pwa-192x192.png',
+              sizes: '192x192',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/logo.png',
+              src: '/pwa-512x512.png',
               sizes: '512x512',
+              type: 'image/png',
+              purpose: 'any',
+            },
+            {
+              src: '/pwa-maskable-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+            {
+              src: '/BuzzingBrain_Video_Watermark_150x150.png',
+              sizes: '150x150',
               type: 'image/png',
               purpose: 'any',
             },
           ],
         },
         workbox: {
-          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,jpg,jpeg,webp,webmanifest}'],
           runtimeCaching: [
             {
+              // Google Fonts Stylesheets
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
               handler: 'CacheFirst',
               options: {
                 cacheName: 'google-fonts-cache',
                 expiration: {
-                  maxEntries: 10,
+                  maxEntries: 20,
                   maxAgeSeconds: 60 * 60 * 24 * 365,
                 },
                 cacheableResponse: {
@@ -61,13 +81,75 @@ export default defineConfig(() => {
               },
             },
             {
+              // Google Fonts Webfonts
               urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
               handler: 'CacheFirst',
               options: {
                 cacheName: 'gstatic-fonts-cache',
                 expiration: {
-                  maxEntries: 10,
+                  maxEntries: 30,
                   maxAgeSeconds: 60 * 60 * 24 * 365,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            {
+              // KaTeX Stylesheet & Math Fonts
+              urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/npm\/katex@.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'katex-cdn-cache',
+                expiration: {
+                  maxEntries: 30,
+                  maxAgeSeconds: 60 * 60 * 24 * 365,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            {
+              // Note Images, Diagrams, Visual Sketches and Icons
+              urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'note-images-cache',
+                expiration: {
+                  maxEntries: 150,
+                  maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            {
+              // API Notes & Curriculum Content
+              urlPattern: /\/api\/(?:notes|curriculum|handwriting|diagrams|syllabus|tests)/i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'api-notes-content-cache',
+                networkTimeoutSeconds: 3,
+                expiration: {
+                  maxEntries: 80,
+                  maxAgeSeconds: 60 * 60 * 24 * 14, // 14 days
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            {
+              // Generated Video & Media assets
+              urlPattern: /\/(?:generated-shorts|generated-diagrams|assets)\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'generated-media-cache',
+                expiration: {
+                  maxEntries: 60,
+                  maxAgeSeconds: 60 * 60 * 24 * 14,
                 },
                 cacheableResponse: {
                   statuses: [0, 200],
@@ -77,7 +159,8 @@ export default defineConfig(() => {
           ],
         },
         devOptions: {
-          enabled: false,
+          enabled: true,
+          type: 'module',
         },
       }),
     ],

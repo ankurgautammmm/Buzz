@@ -35,6 +35,7 @@ import {
 import { getStrictTopicNotes, StrictTopicNotes } from '../data/curatedChapterNotes';
 import { UserProfile } from '../types';
 import { saveTestAttempt, saveMistake, awardStudentXP } from '../services/firebase';
+import { logger } from '../services/logger';
 
 interface TestSectionProps {
   user: UserProfile | null;
@@ -335,7 +336,7 @@ export const TestSection: React.FC<TestSectionProps> = ({
 
       setWeakPracticeQuestions(generated);
     } catch (err: any) {
-      console.error('Weak topic practice generation error:', err);
+      logger.error('TestSection', 'Weak topic practice generation error', err);
     } finally {
       setGeneratingWeakPractice(false);
     }
@@ -436,7 +437,7 @@ export const TestSection: React.FC<TestSectionProps> = ({
       const strictNotes = data.topicNotes || getStrictTopicNotes(topicTarget, aiClass, aiSubject);
       setActiveTopicNotes(strictNotes);
     } catch (err: any) {
-      console.error('AI Test Generation Error:', err);
+      logger.error('TestSection', 'AI Test Generation Error', err);
       setAiTestError(err.message || 'Could not synthesize test. Please try again.');
     } finally {
       setIsGeneratingAiTest(false);

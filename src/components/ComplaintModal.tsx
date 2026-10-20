@@ -10,6 +10,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { ComplaintCategory, ComplaintTicket, UserProfile } from '../types';
+import { logger } from '../services/logger';
 
 interface ComplaintModalProps {
   isOpen: boolean;
@@ -46,7 +47,7 @@ export const ComplaintModal: React.FC<ComplaintModalProps> = ({
       setTitle('');
       setDescription('');
     } catch (err) {
-      console.error('Failed to submit grievance:', err);
+      logger.error('ComplaintModal', 'Failed to submit grievance', err);
     } finally {
       setIsSubmitting(false);
     }

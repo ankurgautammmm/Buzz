@@ -19,6 +19,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { UserProfile } from '../types';
+import { logger } from '../services/logger';
 
 interface EvaluationResult {
   score: number;
@@ -131,7 +132,7 @@ export const HomeworkScannerSection: React.FC<HomeworkScannerSectionProps> = ({
         setErrorMessage(data.error || 'Failed to evaluate answer');
       }
     } catch (err: any) {
-      console.error('Homework evaluation error:', err);
+      logger.error('HomeworkScanner', 'Homework evaluation error', err);
       setErrorMessage('Network or server error during grading evaluation.');
     } finally {
       setIsEvaluating(false);

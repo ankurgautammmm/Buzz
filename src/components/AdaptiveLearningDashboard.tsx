@@ -36,6 +36,7 @@ interface AdaptiveDashboardProps {
   onGoToStudio: (cmd?: string) => void;
   onGoToTests: () => void;
   onGoToCourses: () => void;
+  onGoToAiTutor?: (topic?: string) => void;
   onRequireAuth: () => void;
 }
 
@@ -45,6 +46,7 @@ export const AdaptiveLearningDashboard: React.FC<AdaptiveDashboardProps> = ({
   onGoToStudio,
   onGoToTests,
   onGoToCourses,
+  onGoToAiTutor,
   onRequireAuth,
 }) => {
   // Real-time student data state

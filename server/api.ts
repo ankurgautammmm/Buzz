@@ -32,6 +32,11 @@ import {
   VERIFIED_QUESTION_BANK, 
   validateQuestion 
 } from './questionService';
+import { 
+  createShortsJob, 
+  getShortsJob, 
+  getRecentShortsJobs 
+} from './videoRenderer';
 
 export const apiRouter = express.Router();
 
@@ -166,9 +171,18 @@ apiRouter.post('/handwriting/generate', aiRateLimiter, async (req: Request, res:
 // Multi-turn Chatbot endpoint with multilingual & intuitive pedagogy support
 apiRouter.post('/chat', aiRateLimiter, async (req: Request, res: Response) => {
   try {
-    const { messages, contextNote, language, explainMode, classGrade } = req.body;
+    let { messages, message, prompt, history, contextNote, language, explainMode, classGrade } = req.body;
+    
+    // Harmonize single 'message' or 'prompt' into messages array
     if (!Array.isArray(messages)) {
-      return res.status(400).json({ error: 'Messages array is required' });
+      if (typeof message === 'string' && message.trim()) {
+        const historyArr = Array.isArray(history) ? history : [];
+        messages = [...historyArr, { role: 'user', content: message }];
+      } else if (typeof prompt === 'string' && prompt.trim()) {
+        messages = [{ role: 'user', content: prompt }];
+      } else {
+        return res.status(400).json({ error: 'Messages array or message string is required' });
+      }
     }
 
     const reply = await chatWithScribbleTutor(messages, contextNote, {
@@ -183,16 +197,36 @@ apiRouter.post('/chat', aiRateLimiter, async (req: Request, res: Response) => {
   }
 });
 
-// AI Image Question Solver Endpoint
+// AI Image Question Solver Endpoint (Harmonized multimodal contract)
 apiRouter.post('/ai/solve-image', aiRateLimiter, async (req: Request, res: Response) => {
   try {
-    const { imageBase64, userPrompt, subject } = req.body;
-    if (!imageBase64) {
+    const { imageBase64, image, userPrompt, prompt, subject } = req.body;
+    const base64Data = imageBase64 || image;
+    if (!base64Data) {
       return res.status(400).json({ error: 'Image base64 data is required' });
     }
 
-    const solution = await solveImageQuestion(imageBase64, userPrompt, subject);
-    return res.json({ success: true, solution });
+    const effectivePrompt = userPrompt || prompt || '';
+    const solution = await solveImageQuestion(base64Data, effectivePrompt, subject);
+    
+    // Return unified contract matching all frontend variants
+    const solutionText = typeof solution === 'string' 
+      ? solution 
+      : (solution.explanation || solution.finalAnswer || JSON.stringify(solution));
+
+    return res.json({ 
+      success: true, 
+      solution: solutionText,
+      recognizedText: solution.extractedText || solution.recognizedContent || 'Question detected from image.',
+      extractedText: solution.extractedText || '',
+      feedback: {
+        mistakes: solution.commonMistakes ? [solution.commonMistakes] : [],
+        concept: solution.concept || '',
+        formula: solution.formula || [],
+        steps: solution.stepByStepCalculation || []
+      },
+      data: solution
+    });
   } catch (error) {
     console.error('Error in /ai/solve-image:', error);
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to solve question image' });
@@ -340,7 +374,7 @@ apiRouter.post('/ai/generate-course', aiRateLimiter, async (req: Request, res: R
   }
 });
 
-// AI Educational Video Script Generator Endpoint
+// AI Educational Video Script Generator Endpoint (Backwards-Compatible)
 apiRouter.post('/ai/generate-video-script', aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { topic, classGrade, subject, language, durationMinutes, template } = req.body;
@@ -361,6 +395,102 @@ apiRouter.post('/ai/generate-video-script', aiRateLimiter, async (req: Request, 
   } catch (error) {
     console.error('Error in /ai/generate-video-script:', error);
     return res.status(500).json({ error: error instanceof Error ? error.message : 'Video script generation failed' });
+  }
+});
+
+// ============================================================================
+// AI SHORTS VIDEO RENDERING PIPELINE ENDPOINTS (Phases 1-14)
+// ============================================================================
+
+// 1. Start Background Video Rendering Job
+apiRouter.post('/shorts/create', aiRateLimiter, async (req: Request, res: Response) => {
+  try {
+    const {
+      topic,
+      classGrade,
+      subject,
+      targetAudience,
+      durationSeconds,
+      language,
+      voiceStyle,
+      visualStyle,
+      captionStyle,
+      bgMusicStyle,
+      template,
+      callToAction,
+    } = req.body;
+
+    if (!topic || typeof topic !== 'string' || !topic.trim()) {
+      return res.status(400).json({ error: 'Topic or educational question is required' });
+    }
+
+    const jobId = await createShortsJob({
+      topic: topic.trim(),
+      classGrade: classGrade || 'Class 10',
+      subject: subject || 'Science',
+      targetAudience: targetAudience || 'CBSE Board 2026',
+      durationSeconds: Number(durationSeconds) || 45,
+      language: language || 'Hinglish',
+      voiceStyle: voiceStyle || 'Kore',
+      visualStyle: visualStyle || 'Scientific Animation',
+      captionStyle: captionStyle || 'Karaoke High-Contrast',
+      bgMusicStyle: bgMusicStyle || 'Subtle Piano Intro/Outro',
+      template: template === 'landscape_16_9' ? 'landscape_16_9' : 'shorts_vertical',
+      callToAction,
+    });
+
+    return res.status(202).json({
+      success: true,
+      jobId,
+      message: 'Video rendering pipeline started in background',
+      statusUrl: `/api/shorts/status/${jobId}`,
+    });
+  } catch (error) {
+    console.error('Error in /shorts/create:', error);
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Failed to initialize shorts pipeline',
+    });
+  }
+});
+
+// 2. Poll Video Rendering Progress & Output Status
+apiRouter.get('/shorts/status/:jobId', async (req: Request, res: Response) => {
+  try {
+    const { jobId } = req.params;
+    const job = getShortsJob(jobId);
+
+    if (!job) {
+      return res.status(404).json({ error: `Shorts job ${jobId} not found` });
+    }
+
+    return res.json({
+      success: true,
+      jobId: job.jobId,
+      status: job.status,
+      stage: job.stage,
+      progress: job.progress,
+      message: job.message,
+      scriptData: job.scriptData,
+      videoUrl: job.videoUrl,
+      thumbnailUrl: job.thumbnailUrl,
+      duration: job.duration,
+      error: job.error,
+      updatedAt: job.updatedAt,
+    });
+  } catch (error) {
+    console.error('Error in /shorts/status:', error);
+    return res.status(500).json({ error: 'Failed to retrieve job status' });
+  }
+});
+
+// 3. Get Recently Completed Shorts Gallery
+apiRouter.get('/shorts/recent', async (_req: Request, res: Response) => {
+  try {
+    const recent = getRecentShortsJobs(12);
+    return res.json({ success: true, shorts: recent });
+  } catch (error) {
+    console.error('Error in /shorts/recent:', error);
+    return res.status(500).json({ error: 'Failed to retrieve recent shorts' });
   }
 });
 

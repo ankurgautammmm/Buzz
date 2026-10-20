@@ -48,6 +48,7 @@ import {
   VirtualTool,
   VirtualToolSpecimen
 } from '../data/interactiveLabsData';
+import { PRESCRIBED_PRACTICALS, NcertPracticalItem } from '../data/ncertPracticalsData';
 import { ChemicalBalanceTool } from './labs/ChemicalBalanceTool';
 import { DigitalPhMeterTool } from './labs/DigitalPhMeterTool';
 import { DigitalMicroscopeTool } from './labs/DigitalMicroscopeTool';
@@ -56,7 +57,7 @@ import { UserProfile } from '../types';
 
 interface InteractiveLabsProps {
   activeClass: string;
-  initialSubTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal';
+  initialSubTab?: 'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal' | 'practicals';
   userProfile?: UserProfile | null;
 }
 
@@ -65,8 +66,8 @@ export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({
   initialSubTab = 'organs3d',
   userProfile 
 }) => {
-  // Main Navigation Modes (Mind Maps, 3D Organs, Calibrated Virtual Tools, Simulations, Experiment Journal)
-  const [activeMainTab, setActiveMainTab] = useState<'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal'>(initialSubTab);
+  // Main Navigation Modes (Mind Maps, 3D Organs, Calibrated Virtual Tools, Simulations, Experiment Journal, Practicals)
+  const [activeMainTab, setActiveMainTab] = useState<'mindmaps' | 'organs3d' | 'virtual_tools' | 'simulations' | 'journal' | 'practicals'>(initialSubTab);
 
   // Live tool readings persisted for quick one-click import into Experiment Journal
   const [liveToolReadings, setLiveToolReadings] = useState<{
@@ -293,6 +294,30 @@ export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({
     return Math.min(16, Number(blur.toFixed(1)));
   }, [coarseFocus, fineFocus]);
 
+  // ==========================================
+  // TAB 6: PRESCRIBED PRACTICAL CATALOGUE STATE
+  // ==========================================
+  const [selectedPracticalId, setSelectedPracticalId] = useState<string>('c10_ph_testing');
+  const [practicalSubjectFilter, setPracticalSubjectFilter] = useState<string>('All');
+  const [practicalClassFilter, setPracticalClassFilter] = useState<string>(activeClass || 'Class 10');
+  const [practicalSearchQuery, setPracticalSearchQuery] = useState<string>('');
+  const [revealedVivaAnswers, setRevealedVivaAnswers] = useState<Record<number, boolean>>({});
+
+  const filteredPracticals = useMemo(() => {
+    return PRESCRIBED_PRACTICALS.filter(p => {
+      const classMatch = practicalClassFilter === 'All' || p.classGrade === practicalClassFilter;
+      const subjMatch = practicalSubjectFilter === 'All' || p.subject === practicalSubjectFilter;
+      const searchMatch = !practicalSearchQuery || 
+        p.title.toLowerCase().includes(practicalSearchQuery.toLowerCase()) || 
+        p.chapter.toLowerCase().includes(practicalSearchQuery.toLowerCase());
+      return classMatch && subjMatch && searchMatch;
+    });
+  }, [practicalClassFilter, practicalSubjectFilter, practicalSearchQuery]);
+
+  const activePractical = useMemo(() => {
+    return PRESCRIBED_PRACTICALS.find(p => p.id === selectedPracticalId) || filteredPracticals[0] || PRESCRIBED_PRACTICALS[0];
+  }, [selectedPracticalId, filteredPracticals]);
+
   // Render Mind Map Recursive Node
   const renderMindMapNode = (node: MindMapNode, level: number = 0) => {
     const isExpanded = Boolean(expandedNodes[node.id]);
@@ -439,6 +464,23 @@ export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({
               activeMainTab === 'journal' ? 'bg-slate-950/20 text-slate-950' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
             }`}>
               PDF Report
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveMainTab('practicals')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeMainTab === 'practicals' 
+                ? 'bg-purple-500 text-white shadow-md scale-[1.02]' 
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <FlaskConical className="w-4 h-4" />
+            <span>Prescribed Practicals</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono uppercase tracking-wider font-bold ${
+              activeMainTab === 'practicals' ? 'bg-white/20 text-white' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+            }`}>
+              NCERT
             </span>
           </button>
         </div>
@@ -1754,6 +1796,287 @@ export const InteractiveLabsAndMindMaps: React.FC<InteractiveLabsProps> = ({
             setActiveMainTab('virtual_tools');
           }}
         />
+      )}
+
+      {/* ========================================================= */}
+      {/* 6. OFFICIAL PRESCRIBED PRACTICAL CATALOGUE VIEW */}
+      {/* ========================================================= */}
+      {activeMainTab === 'practicals' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* Top Banner */}
+          <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-900/30 via-slate-900 to-slate-950 border border-purple-500/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  CBSE &amp; NCERT Syllabus
+                </span>
+                <span className="text-xs text-slate-400">Class 9–12 Science Practical Manual</span>
+              </div>
+              <h3 className="text-xl font-black text-white">Prescribed Laboratory Practical Catalogue</h3>
+              <p className="text-xs text-slate-400 mt-1 max-w-xl">
+                Every mandatory NCERT physics, chemistry, and biology laboratory experiment with complete apparatus specs, safety protocols, sample observation tables, viva questions, and links to interactive virtual instruments.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveMainTab('journal')}
+                className="px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>My Practical Journal</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-400">Class:</span>
+              {['All', 'Class 9', 'Class 10', 'Class 11', 'Class 12'].map(cls => (
+                <button
+                  key={cls}
+                  onClick={() => setPracticalClassFilter(cls)}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    practicalClassFilter === cls
+                      ? 'bg-purple-500 text-white shadow-sm'
+                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                  }`}
+                >
+                  {cls}
+                </button>
+              ))}
+
+              <span className="text-xs font-bold text-slate-400 ml-2">Subject:</span>
+              {['All', 'Science', 'Physics', 'Chemistry', 'Biology'].map(subj => (
+                <button
+                  key={subj}
+                  onClick={() => setPracticalSubjectFilter(subj)}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    practicalSubjectFilter === subj
+                      ? 'bg-purple-500 text-white shadow-sm'
+                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                  }`}
+                >
+                  {subj}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
+              <input
+                type="text"
+                value={practicalSearchQuery}
+                onChange={(e) => setPracticalSearchQuery(e.target.value)}
+                placeholder="Search experiments..."
+                className="bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-purple-400"
+              />
+            </div>
+          </div>
+
+          {/* 2-Column Layout: Practicals List & Detail Inspector */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left: Practical List */}
+            <div className="lg:col-span-5 space-y-2.5 max-h-[850px] overflow-y-auto pr-1">
+              {filteredPracticals.map(p => {
+                const isSelected = p.id === activePractical?.id;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => setSelectedPracticalId(p.id)}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-purple-500/15 border-purple-400 shadow-lg shadow-purple-500/10'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[10px] mb-1.5">
+                      <span className="font-bold uppercase text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-md border border-purple-500/30">
+                        {p.classGrade} • {p.subject}
+                      </span>
+                      <span className="font-semibold text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>NCERT Verified</span>
+                      </span>
+                    </div>
+
+                    <h4 className="text-xs sm:text-sm font-bold text-white line-clamp-2">
+                      {p.title}
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-1 line-clamp-1">
+                      Chapter: {p.chapter}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Right: Selected Practical Full Details */}
+            {activePractical && (
+              <div className="lg:col-span-7 p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-purple-400 tracking-wider">
+                      {activePractical.classGrade} • {activePractical.subject} • {activePractical.chapter}
+                    </span>
+                    <h3 className="text-base sm:text-lg font-black text-white mt-1">
+                      {activePractical.title}
+                    </h3>
+                  </div>
+
+                  {activePractical.linkedTool && (
+                    <button
+                      onClick={() => {
+                        if (activePractical.linkedTool === 'microscope') {
+                          setSelectedToolId('microscope');
+                          setActiveMainTab('virtual_tools');
+                        } else if (activePractical.linkedTool === 'balance') {
+                          setSelectedToolId('balance');
+                          setActiveMainTab('virtual_tools');
+                        } else if (activePractical.linkedTool === 'ph_meter') {
+                          setSelectedToolId('ph_meter');
+                          setActiveMainTab('virtual_tools');
+                        } else {
+                          setActiveMainTab('simulations');
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-bold rounded-xl text-xs transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
+                    >
+                      <Sliders className="w-3.5 h-3.5" />
+                      <span>Launch Virtual Apparatus</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Objective */}
+                <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs">
+                  <strong className="text-purple-300 block mb-1 uppercase font-black text-[10px] tracking-wider">Learning Objective:</strong>
+                  <span className="text-slate-200 leading-relaxed">{activePractical.objective}</span>
+                </div>
+
+                {/* Apparatus & Safety */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                    <h5 className="font-bold text-slate-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Apparatus &amp; Materials</span>
+                    </h5>
+                    <ul className="space-y-1 text-slate-400">
+                      {activePractical.apparatus.map((app, i) => (
+                        <li key={i} className="flex items-center gap-1.5">
+                          <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                          <span>{app}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                    <h5 className="font-bold text-rose-400 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Safety Precautions</span>
+                    </h5>
+                    <ul className="space-y-1 text-slate-400">
+                      {activePractical.safetyPrecautions.map((safe, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <span className="text-rose-400 font-bold">•</span>
+                          <span>{safe}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Step-by-Step Procedure */}
+                <div className="space-y-2">
+                  <h5 className="font-bold text-white text-xs uppercase tracking-wider">Step-by-Step Laboratory Procedure</h5>
+                  <div className="space-y-1.5 text-xs">
+                    {activePractical.procedureSteps.map((step, idx) => (
+                      <div key={idx} className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-start gap-2.5">
+                        <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-300 font-bold font-mono text-[11px] flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span className="text-slate-300 leading-relaxed">{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Sample Observation Table */}
+                <div className="space-y-2">
+                  <h5 className="font-bold text-white text-xs uppercase tracking-wider">Standard Observation Table</h5>
+                  <div className="overflow-x-auto rounded-xl border border-slate-800">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold border-b border-slate-800">
+                        <tr>
+                          {activePractical.observationHeaders.map((head, i) => (
+                            <th key={i} className="p-2.5 font-bold">{head}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800 bg-slate-900/40 text-slate-300 font-mono text-[11px]">
+                        {activePractical.sampleObservations.map((row, rIdx) => (
+                          <tr key={rIdx} className="hover:bg-slate-800/40">
+                            {row.map((cell, cIdx) => (
+                              <td key={cIdx} className="p-2.5">{cell}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Governing Calculations & Expected Outcome */}
+                {activePractical.calculationsFormula && (
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-purple-500/20 text-xs">
+                    <span className="text-[10px] font-bold uppercase text-purple-400 block mb-1">Calculations &amp; Governing Equations:</span>
+                    <span className="font-mono text-purple-200">{activePractical.calculationsFormula}</span>
+                  </div>
+                )}
+
+                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
+                  <strong className="block mb-0.5 text-emerald-400">Expected Experimental Outcome:</strong>
+                  <span>{activePractical.expectedOutcome}</span>
+                </div>
+
+                {/* Viva Voce Questions */}
+                <div className="space-y-2 pt-2 border-t border-slate-800">
+                  <h5 className="font-bold text-amber-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    <span>Viva Voce Oral Examination Questions</span>
+                  </h5>
+                  <div className="space-y-2">
+                    {activePractical.vivaQuestions.map((viva, vIdx) => {
+                      const isRevealed = Boolean(revealedVivaAnswers[vIdx]);
+                      return (
+                        <div key={vIdx} className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5 text-xs">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-bold text-slate-200">
+                              <span className="text-amber-400 mr-1.5">Q{vIdx + 1}.</span> {viva.question}
+                            </span>
+                            <button
+                              onClick={() => setRevealedVivaAnswers(prev => ({ ...prev, [vIdx]: !prev[vIdx] }))}
+                              className="text-[10px] text-amber-400 hover:text-amber-300 font-bold shrink-0 cursor-pointer"
+                            >
+                              {isRevealed ? 'Hide Answer' : 'Reveal Answer'}
+                            </button>
+                          </div>
+                          {isRevealed && (
+                            <p className="text-emerald-300 bg-slate-900/60 p-2 rounded-lg border border-slate-800 animate-in fade-in">
+                              <strong>Answer: </strong> {viva.answer}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
