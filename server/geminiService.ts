@@ -1382,7 +1382,10 @@ Return strictly valid JSON for a single NoteSection:
         "Always write physical units alongside numerical values.",
         "Draw clean, labeled schematic diagrams in examinations."
       ],
-      importantFormulas: ["Standard governing formula with dimensional notation"],
+      importantFormulas: [
+        `Primary Relationship for ${params.heading}: Formulated with standard SI units`,
+        "Dimensional Verification: [LHS] = [RHS]"
+      ],
       highlighterWords: [params.heading, "Conservation Principle"],
       warningMistakes: ["Do not skip intermediate algebraic steps in board exams."],
       starredPoints: ["3-mark direct question frequently asked in board exams."],

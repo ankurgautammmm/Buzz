@@ -58,7 +58,7 @@ const COMMUNITY_NOTES_SEED: CommunityNoteItem[] = [
     viewsCount: 8940,
     examTarget: 'cbse',
     summarySnippet: 'Detailed respiration, photosynthesis, human nephron excretory system diagrams with color coded labels and 5-mark board answers.',
-    tags: ['Biology', 'Diagrams', '100% Guaranteed Board Qs'],
+    tags: ['Biology', 'Diagrams', 'High-Yield Board Topics'],
     command: '/handwriting class:10 subject:Science chapter:"Life Processes" style:gel-pen paper:ruled ink:royal-blue thinking:high',
   },
   {

@@ -94,8 +94,8 @@ export function sanitizeQuestion(q: any, defaultParams: QuestionRequestParams): 
     );
   }
   if (!matchedOption) {
-    // If not matching, assign first option if none matched
-    matchedOption = options[0];
+    // Reject question rather than arbitrarily guessing options[0] as correct
+    return null;
   }
   correctAnswer = matchedOption;
 

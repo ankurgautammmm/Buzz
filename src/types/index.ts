@@ -115,6 +115,16 @@ export interface NoteContentPayload {
     question: string;
     answer: string;
   };
+  verificationStatus?: 'VERIFIED_CURRICULUM' | 'CURATED_FACULTY' | 'AI_GENERATED_OUTLINE' | 'PENDING_REVIEW' | 'NEEDS_REVISION';
+  sourceCitation?: {
+    textbook: string;
+    edition: string;
+    chapterNumber?: number;
+    isbn?: string;
+    officialUrl?: string;
+    verifiedDate?: string;
+  };
+  qualityScore?: number; // 0-100 quality gate metric
 }
 
 export interface StudyNote {

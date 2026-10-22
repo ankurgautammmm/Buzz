@@ -818,10 +818,19 @@ export const HandwrittenNoteRenderer: React.FC<HandwrittenNoteRendererProps> = (
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Authentic CBSE Topper Stamp */}
-          <div className="px-2.5 py-0.5 border-2 border-dashed border-red-600 text-red-700 rounded-lg text-[10px] font-black uppercase tracking-wider rotate-[-2deg] bg-red-50/90 shadow-2xs">
-            ★ CBSE TOPPER • AIR 1 VERIFIED
-          </div>
+          {activeNote.verificationStatus === 'VERIFIED_CURRICULUM' ? (
+            <div className="px-2.5 py-0.5 border border-emerald-600 text-emerald-800 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-50 shadow-2xs flex items-center gap-1">
+              <span>✓</span> NCERT CURRICULUM VERIFIED
+            </div>
+          ) : activeNote.verificationStatus === 'CURATED_FACULTY' ? (
+            <div className="px-2.5 py-0.5 border border-blue-600 text-blue-800 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-50 shadow-2xs flex items-center gap-1">
+              <span>✓</span> FACULTY REVIEWED
+            </div>
+          ) : (
+            <div className="px-2.5 py-0.5 border border-amber-600 text-amber-800 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-amber-50 shadow-2xs flex items-center gap-1">
+              <span>✎</span> SYLLABUS OUTLINE (AI ASSISTED)
+            </div>
+          )}
         </div>
       </div>
     );
@@ -834,6 +843,13 @@ export const HandwrittenNoteRenderer: React.FC<HandwrittenNoteRendererProps> = (
 
       <div className="pl-9 space-y-3.5">
         {renderRegisterHeader('01')}
+
+        {activeNote.sourceCitation && (
+          <div className="flex flex-wrap items-center justify-between text-[11px] font-sans px-2.5 py-1 bg-amber-50/90 border border-amber-300 rounded-lg text-amber-950">
+            <span><strong>Prescribed Source:</strong> {activeNote.sourceCitation.textbook} ({activeNote.sourceCitation.edition})</span>
+            <span>{activeNote.sourceCitation.isbn ? `ISBN: ${activeNote.sourceCitation.isbn}` : `Ch. ${activeNote.sourceCitation.chapterNumber}`}</span>
+          </div>
+        )}
 
         <div className="flex items-center justify-between pt-0.5 pb-0.5 text-base sm:text-lg font-bold">
           <div className="inline-block px-3 py-0.5 rounded-lg bg-emerald-100/90 text-emerald-900 border-2 border-emerald-400 shadow-2xs rotate-[-1deg]">
